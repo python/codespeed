@@ -54,6 +54,7 @@ MIDDLEWARE = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 )
 
 if DEBUG:
@@ -115,6 +116,7 @@ STATIC_ROOT = os.path.join(BASEDIR, "sitestatic")
 STATICFILES_DIRS = (
     os.path.join(BASEDIR, 'static'),
 )
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Codespeed settings that can be overwritten here.
 from codespeed.settings import *
