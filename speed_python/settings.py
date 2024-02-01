@@ -41,6 +41,7 @@ ADMIN_MEDIA_PREFIX = '/static/admin/'
 # XXX Set SECRET_KEY in local_settings.py
 #with open(os.path.join(BASEDIR, 'secret_key')) as f:
 #    SECRET_KEY = f.read().strip()
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
@@ -117,5 +118,3 @@ STATICFILES_DIRS = (
 
 # Codespeed settings that can be overwritten here.
 from codespeed.settings import *
-
-from .local_settings import *
