@@ -34,6 +34,9 @@ MANAGERS = ADMINS
 
 COMPRESS_ENABLED = True
 
+MIDDLEWARE = MIDDLEWARE + ['whitenoise.middleware.WhiteNoiseMiddleware']
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 _DATA_ROOT = os.environ.get("DJANGO_DATA_ROOT", "/srv/data")
 MEDIA_ROOT = _DATA_ROOT + "/media"
 STATIC_ROOT = _DATA_ROOT + "/site_media/static"

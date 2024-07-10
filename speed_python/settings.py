@@ -41,21 +41,19 @@ ADMIN_MEDIA_PREFIX = '/static/admin/'
 # XXX Set SECRET_KEY in local_settings.py
 #with open(os.path.join(BASEDIR, 'secret_key')) as f:
 #    SECRET_KEY = f.read().strip()
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
     'django.template.loaders.app_directories.Loader',
 )
 
-MIDDLEWARE = (
+MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-)
+]
 
 if DEBUG:
     import traceback
@@ -116,7 +114,11 @@ STATIC_ROOT = os.path.join(BASEDIR, "sitestatic")
 STATICFILES_DIRS = (
     os.path.join(BASEDIR, 'static'),
 )
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Codespeed settings that can be overwritten here.
 from codespeed.settings import *
+
+try:
+    from .local_settings import *
+except ImportError:
+    pass
