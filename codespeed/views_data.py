@@ -130,11 +130,31 @@ def getcomparisonexes():
     for proj in Project.objects.all():
         executables = []
         executablekeys = []
+        proj_name_lower = str(proj).lower()
+        proj_name_len = len(proj_name_lower)
+
+        def short_exestring(exe):
+            s = get_sanitized_executable_name_for_comparison_view(exe)
+            if s.endswith('-64'):
+                s = s[:-3]
+            return s
+
+        def strip_proj_prefix(name):
+            if name.lower().startswith(proj_name_lower):
+                rest = name[proj_name_len:]
+                if rest and rest[0] in (' ', '-'):
+                    rest = rest[1:]
+                if rest:
+                    return rest
+            return name
+
         # add all tagged revs for any project
         for exe in baselines:
             if exe['key'] != "none" and exe['executable'].project == proj:
+                name = strip_proj_prefix(
+                    short_exestring(exe['executable']) + " " + exe['revision'].tag)
                 executablekeys.append(exe['key'])
-                executables.append(exe)
+                executables.append(dict(exe, name=name))
 
         # add latest revs of the project
         branches = Branch.objects.filter(project=proj, display_on_comparison_page=True)
@@ -147,8 +167,7 @@ def getcomparisonexes():
             # because we already added tagged revisions
             if rev.tag == "":
                 for exe in Executable.objects.filter(project=proj):
-                    exestring = get_sanitized_executable_name_for_comparison_view(exe)
-                    name = exestring + " latest"
+                    name = short_exestring(exe) + " latest"
                     if branch.name != proj.default_branch:
                         name += " in branch '" + branch.name + "'"
                     key = str(exe.id) + ":L:" + branch.name
@@ -157,7 +176,7 @@ def getcomparisonexes():
                         'key': key,
                         'executable': exe,
                         'revision': rev,
-                        'name': name,
+                        'name': strip_proj_prefix(name),
                     })
         all_executables[proj] = executables
         exekeys += executablekeys

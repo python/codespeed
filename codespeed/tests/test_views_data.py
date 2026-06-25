@@ -86,24 +86,24 @@ class TestGetComparisonExes(TestCase):
         self.assertEqual(executables[self.project][0]['key'],
                          '1:L:master')
         self.assertEqual(executables[self.project][0]['name'],
-                         'TestExecutable1 latest')
+                         'Executable1 latest')
         self.assertEqual(executables[self.project][0]['revision'],
                          self.revision_1_master)
 
         self.assertEqual(executables[self.project][1]['key'],
                          '2:L:master')
         self.assertEqual(executables[self.project][1]['name'],
-                         'TestExecutable2 latest')
+                         'Executable2 latest')
 
         self.assertEqual(executables[self.project][2]['key'],
                          '1:L:custom')
         self.assertEqual(executables[self.project][2]['name'],
-                         'TestExecutable1 latest in branch \'custom\'')
+                         'Executable1 latest in branch \'custom\'')
 
         self.assertEqual(executables[self.project][3]['key'],
                          '2:L:custom')
         self.assertEqual(executables[self.project][3]['name'],
-                         'TestExecutable2 latest in branch \'custom\'')
+                         'Executable2 latest in branch \'custom\'')
 
         self.assertEqual(exe_keys[0], '1:L:master')
         self.assertEqual(exe_keys[1], '2:L:master')
@@ -125,24 +125,24 @@ class TestGetComparisonExes(TestCase):
         self.assertEqual(executables[self.project][0]['key'],
                          '1:L:master')
         self.assertEqual(executables[self.project][0]['name'],
-                         'TestExecutable1 latest in branch \'master\'')
+                         'Executable1 latest in branch \'master\'')
         self.assertEqual(executables[self.project][0]['revision'],
                          self.revision_1_master)
 
         self.assertEqual(executables[self.project][1]['key'],
                          '2:L:master')
         self.assertEqual(executables[self.project][1]['name'],
-                         'TestExecutable2 latest in branch \'master\'')
+                         'Executable2 latest in branch \'master\'')
 
         self.assertEqual(executables[self.project][2]['key'],
                          '1:L:custom')
         self.assertEqual(executables[self.project][2]['name'],
-                         'TestExecutable1 latest')
+                         'Executable1 latest')
 
         self.assertEqual(executables[self.project][3]['key'],
                          '2:L:custom')
         self.assertEqual(executables[self.project][3]['name'],
-                         'TestExecutable2 latest')
+                         'Executable2 latest')
 
         self.assertEqual(exe_keys[0], '1:L:master')
         self.assertEqual(exe_keys[1], '2:L:master')

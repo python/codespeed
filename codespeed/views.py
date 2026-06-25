@@ -385,12 +385,14 @@ def comparison(request):
         benchmarks[source_label] = qs
         for unit in qs.values_list('units_title', flat=True).distinct():
             unit_qs = qs.filter(units_title=unit)
-            units = unit_qs[0].units
-            lessisbetter = (unit_qs[0].lessisbetter and
-                            ' (less is better)' or ' (more is better)')
-            bench_units[unit] = [
-                [b.id for b in unit_qs], lessisbetter, units
-            ]
+            ids = [b.id for b in unit_qs]
+            if unit in bench_units:
+                bench_units[unit][0].extend(ids)
+            else:
+                units = unit_qs[0].units
+                lessisbetter = (unit_qs[0].lessisbetter and
+                                ' (less is better)' or ' (more is better)')
+                bench_units[unit] = [ids, lessisbetter, units]
     checkedbenchmarks = []
     if 'ben' in data:
         checkedbenchmarks = _parse_ben_param(data['ben'])

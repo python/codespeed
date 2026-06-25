@@ -175,6 +175,7 @@ class Benchmark(models.Model):
     S_TYPES = (
         ('legacy', 'Legacy'),
         ('pyperformance', 'PyPerformance'),
+        ('unused', 'Unused'),
     )
     D_TYPES = (
         ('U', 'Mean'),
