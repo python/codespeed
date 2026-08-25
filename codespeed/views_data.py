@@ -11,10 +11,20 @@ from codespeed.models import (
 
 
 def parse_benchmark_ident(ben):
-    """Split a '<name>.<source>' (or bare '<name>') into (name, source='legacy')."""
+    """Split a '<name>.<source>' (or bare '<name>') into (name, source).
+
+    If the suffix isn't a known source (e.g. a bare name that itself
+    contains a dot, like 'base16_large.pyperf'), look up the source by
+    name: if it uniquely identifies a benchmark, use that source, else
+    fall back to 'legacy'.
+    """
     name, _, suffix = ben.rpartition('.')
     if name and suffix in dict(Benchmark.S_TYPES):
         return name, suffix
+    sources = list(
+        Benchmark.objects.filter(name=ben).values_list('source', flat=True))
+    if len(sources) == 1:
+        return ben, sources[0]
     return ben, 'legacy'
 
 

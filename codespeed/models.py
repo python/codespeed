@@ -516,6 +516,7 @@ class Report(models.Model):
 
                 currentlist.append({
                     'bench_name': bench.name,
+                    'bench_source': bench.source,
                     'bench_description': bench.description,
                     'result': result,
                     'std_dev': std_dev,

@@ -2,11 +2,12 @@
 from django.test import TestCase
 from django.test import override_settings
 
-from codespeed.models import Project, Executable, Branch, Revision
+from codespeed.models import Project, Executable, Branch, Revision, Benchmark
 from codespeed.views import getbaselineexecutables
 from codespeed.views import getcomparisonexes
 from codespeed.views_data import get_sanitized_executable_name_for_timeline_view
 from codespeed.views_data import get_sanitized_executable_name_for_comparison_view
+from codespeed.views_data import parse_benchmark_ident
 
 
 class TestGetBaselineExecutables(TestCase):
@@ -278,3 +279,43 @@ class UtilityFunctionsTestCase(TestCase):
         executable = Executable(name='b' * 25)
         name = get_sanitized_executable_name_for_comparison_view(executable)
         self.assertEqual(name, 'b' * 20 + '...')
+
+
+class TestParseBenchmarkIdent(TestCase):
+    """The /changes/ page links to /timeline/?ben=<benchmark.name>, i.e. the
+    bare name without a '.<source>' suffix. parse_benchmark_ident() must
+    resolve such short links back to the right source whenever the name is
+    unambiguous, even when the name itself contains a dot (as pyperformance
+    benchmark names sometimes do, e.g. 'base16_large.pyperf')."""
+
+    def test_full_ident_with_valid_source_suffix(self):
+        self.assertEqual(
+            parse_benchmark_ident('mybenchmark.pyperformance'),
+            ('mybenchmark', 'pyperformance'))
+        self.assertEqual(
+            parse_benchmark_ident('mybenchmark.legacy'),
+            ('mybenchmark', 'legacy'))
+
+    def test_bare_legacy_name_without_dot(self):
+        Benchmark.objects.create(name='ai', source='legacy')
+        self.assertEqual(parse_benchmark_ident('ai'), ('ai', 'legacy'))
+
+    def test_bare_pyperformance_name_containing_dot(self):
+        # Regression test: this name contains a dot but isn't a valid
+        # '<name>.<source>' pair, since 'pyperf' isn't a known source.
+        Benchmark.objects.create(
+            name='base16_large.pyperf', source='pyperformance')
+        self.assertEqual(
+            parse_benchmark_ident('base16_large.pyperf'),
+            ('base16_large.pyperf', 'pyperformance'))
+
+    def test_unknown_name_falls_back_to_legacy(self):
+        self.assertEqual(
+            parse_benchmark_ident('nosuchbenchmark'),
+            ('nosuchbenchmark', 'legacy'))
+
+    def test_ambiguous_name_across_sources_falls_back_to_legacy(self):
+        Benchmark.objects.create(name='float', source='legacy')
+        Benchmark.objects.create(name='float', source='pyperformance')
+        self.assertEqual(
+            parse_benchmark_ident('float'), ('float', 'legacy'))
