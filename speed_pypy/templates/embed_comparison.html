@@ -6,11 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PyPy vs CPython benchmark comparison</title>
   <style>
-    html, body { margin: 0; padding: 0; background: transparent; }
+    html, body { margin: 0; padding: 0; background: transparent; height: 100%; overflow: hidden; }
+    /* Fill the embedding iframe so the rotated benchmark labels are never
+       clipped: the host page controls the height via the iframe. */
     #baseline-comparison-plot {
       position: relative;
       width: 100%;
-      height: 480px;
+      height: 100vh;
       font-family: sans-serif;
     }
   </style>

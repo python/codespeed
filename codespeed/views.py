@@ -114,7 +114,9 @@ def embed_comparison(request):
 
 @require_GET
 def gethistoricaldata(request):
-    data = {'results': {}, 'benchmarks': []}
+    # 'labels' maps each key in tagged_revs (plus baseline and 'latest') to
+    # a two-line label [tag, project] for the x axis of the history chart.
+    data = {'results': {}, 'benchmarks': [], 'labels': {}}
     env = Environment.objects.all()
     if settings.DEF_ENVIRONMENT:
         env = env.get(name=settings.DEF_ENVIRONMENT)
@@ -134,6 +136,7 @@ def gethistoricaldata(request):
             )
         rev0 = rev[0]
         resname = '{} {}'.format(b['executable'], rev0.tag)
+        data['labels'][resname] = [rev0.tag, baseline_exe.project.name]
         baseline_results.append((resname, Result.objects.filter(
             executable=baseline_exe, revision=rev0, environment=env,
             benchmark__source='legacy')))
@@ -165,12 +168,14 @@ def gethistoricaldata(request):
                 logger.info("no results for '%s' '%s' '%s'" % (str(_default_exe), str(rev), str(env)))
                 continue
             default_results[rev.tag] = res
+            data['labels'][rev.tag] = [rev.tag, _default_exe.project.name]
     data['tagged_revs'] = [rev.tag for rev in all_taggedrevs if rev.tag in default_results]
     # Fetch data for latest results
     executable = settings.DEF_EXECUTABLES[0]
     def_name = executable['name']
     def_project = Project.objects.get(name=executable['project'])
     default_exe = Executable.objects.get(name=def_name, project=def_project)
+    data['labels']['latest'] = ['latest', default_exe.project.name]
     default_branch = Branch.objects.get(
             name=default_exe.project.default_branch,
             project=default_exe.project)

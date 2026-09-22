@@ -93,6 +93,7 @@ DEF_BASELINES = [
                  {'executable': 'cpython', 'revision': '3.11.15'},
                 ]
 DEF_EXECUTABLES = [
+                   {'name': 'pypy3.12-jit-64', 'project': 'PyPy3.12'},
                    {'name': 'pypy3.11-jit-64', 'project': 'PyPy3.11'},
                   ]
 DEF_ENVIRONMENT = 'benchmarker2'
