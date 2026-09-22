@@ -31,7 +31,7 @@
     <h3>How fast is {{ default_exe.project }}?</h3>
     <iframe src="{% url 'embed-comparison' %}"
             title="{{ default_exe.project }} ({{ default_exe }}) vs {{ baseline }} benchmark comparison"
-            style="border:0;width:100%;height:400px"
+            style="border:0;width:100%;height:480px"
             loading="lazy"></iframe>
     <p class="plot-caption">Plot 1: The above plot represents {{ default_exe.project }} ({{ default_exe }}) benchmark times normalized to {{ baseline }}. Smaller is better.</p>
     <p>It depends greatly on the type of task being performed. The geometric average of all benchmarks is <span id="geomean"></span> or <strong id="geofaster"></strong> times <em>faster</em> than {{ baseline }}</p>
@@ -120,9 +120,11 @@
         geomeans.push(1 / trunk_geomean);
         $('#num_of_benchs').html(num_of_benchs);
 
-        var ticks2 = [data['baseline']];
-        for (var i in data['tagged_revs']) { ticks2.push(data['tagged_revs'][i]); }
-        ticks2.push('latest {{ default_exe.project }}');
+        // Two-line labels: [tag, project]; fall back to the key itself.
+        var labelFor = function(key) { return (data['labels'] || {})[key] || key; };
+        var ticks2 = [labelFor(data['baseline'])];
+        for (var i in data['tagged_revs']) { ticks2.push(labelFor(data['tagged_revs'][i])); }
+        ticks2.push(labelFor('latest'));
 
         var wrap2 = document.getElementById('historical-plot');
         var canvas2 = document.createElement('canvas');
