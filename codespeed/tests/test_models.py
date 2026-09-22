@@ -186,6 +186,12 @@ class TestReport(TestCase):
         self.assertIn('b1', rep.summary)
         self.assertEqual('red', rep.colorcode)
 
+    def test_changes_table_row_has_bench_source(self):
+        s1 = self.make_result(15)
+        rep = self.make_report(s1)
+        tablelist = rep.get_changes_table(force_save=True)
+        self.assertEqual(tablelist[0]['rows'][0]['bench_source'], 'legacy')
+
     def test_multiple_quantities(self):
         b1 = self.make_bench('b1', quantity='Space', units='bytes')
         s1 = self.make_result(1.0)

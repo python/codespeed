@@ -30,7 +30,7 @@
   </tr>
 </tfoot>
 <tbody>
-{% for row in units.rows|dictsort:"bench_name" %}
+{% for row in units.rows|dictsort:"bench_name"|dictsort:"bench_source" %}
   <tr data-change="{{ row.change|fix_infinity }}" data-trend="{{ row.trend|fix_infinity }}">
     <td title="{{ row.bench_description }}">{{ row.bench_name }}</td>
     <td>{{ row.result|floatformat:units.precission }}</td>
