@@ -34,6 +34,11 @@ from .images import gen_image_from_results
 
 logger = logging.getLogger(__name__)
 
+# Fraction of the plottable benchmark set a revision must have legacy results
+# for before gethistoricaldata() will render it as the 'latest' column. Runs
+# glitch and drop individual benchmarks, so this is deliberately below 1.0.
+LATEST_MIN_COVERAGE = 0.8
+
 
 def no_environment_error(request):
     admin_url = reverse('admin:codespeed_environment_changelist')
@@ -190,16 +195,33 @@ def gethistoricaldata(request):
             project=default_exe.project)
     revs = Revision.objects.filter(
         branch=default_branch).order_by('-date')[:100]
-    default_lastrev = None
+    # The benchmarks the plots can actually use: those the baseline and every
+    # tagged revision all have legacy results for. A benchmark missing from any
+    # of them is dropped client side, so it cannot count towards coverage.
+    plottable = {res.benchmark.name for res in baseline_results[0][1]}
+    for tag in data['tagged_revs']:
+        plottable &= {res.benchmark.name for res in default_results[tag]}
+    required = len(plottable) * LATEST_MIN_COVERAGE
+
+    # Accept a revision as 'latest' only once its legacy run has covered enough
+    # of that set, otherwise fall back to the previous one that has.
     for rev in revs:
-        default_lastrev = rev
-        if default_lastrev.results.filter(executable=default_exe, environment=env):
-            break
-        default_lastrev = None
-    if default_lastrev is not None:
-        default_results['latest'] = Result.objects.filter(
-            executable=default_exe, revision=default_lastrev, environment=env,
+        latest_results = Result.objects.filter(
+            executable=default_exe, revision=rev, environment=env,
             benchmark__source='legacy')
+        covered = plottable & {res.benchmark.name for res in latest_results}
+        if covered and len(covered) >= required:
+            default_results['latest'] = latest_results
+            break
+        logger.info(
+            "skipping '%s' as 'latest': %d of %d plottable benchmarks have "
+            "legacy results for '%s'" % (
+                str(rev), len(covered), len(plottable), str(env)))
+    else:
+        logger.error(
+            "no revision covers %.0f%% of the %d plottable benchmarks for "
+            "'%s' '%s'" % (LATEST_MIN_COVERAGE * 100, len(plottable),
+                           str(default_exe), str(env)))
 
     # Collect data
     benchmarks = []

@@ -48,10 +48,19 @@
                 tagged_data[i].push(data['results'][benchname][rev] / data['results'][benchname][data['baseline']]);
             }
             if (!add_to_tagged_data) { continue; }
-            benchmarks.push(benchname);
             var rel = data['results'][benchname]['latest'] / data['results'][benchname][data['baseline']];
+            // Drop a benchmark the latest run is missing before pushing its
+            // label, so the bars stay aligned with the x axis ticks.
+            // (!(rel > 0) also catches the NaN from a missing value.)
+            if (!(rel > 0)) { continue; }
+            benchmarks.push(benchname);
             latestValues.push(rel);
             baselineValues.push(1.0);
+        }
+
+        if (benchmarks.length === 0) {
+            wrap.innerHTML = 'No complete benchmark run available yet';
+            return;
         }
 
         var canvas1 = document.createElement('canvas');

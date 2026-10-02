@@ -94,13 +94,25 @@
             }
             if (!add_to_tagged_data) { continue; }
             var rel = data['results'][benchname]['latest'] / data['results'][benchname][data['baseline']];
+            // Only count what we multiply. A benchmark the latest run is
+            // missing would otherwise inflate the root below and drag the
+            // geometric mean towards 1.0. (!(rel > 0) also catches the NaN
+            // from a missing value.)
+            if (!(rel > 0)) { continue; }
             latestValues.push(rel);
-            if (rel > 0 && !isNaN(rel)) { trunk_geomean *= rel; }
+            trunk_geomean *= rel;
         }
 
-        trunk_geomean = Math.pow(trunk_geomean, 1 / latestValues.length);
-        $('#geomean').html(trunk_geomean.toFixed(2));
-        $('#geofaster').html((1 / trunk_geomean).toFixed(1));
+        if (latestValues.length === 0) {
+            // No usable latest run: report nothing rather than a bogus 1.0x.
+            trunk_geomean = NaN;
+            $('#geomean').html('n/a');
+            $('#geofaster').html('n/a');
+        } else {
+            trunk_geomean = Math.pow(trunk_geomean, 1 / latestValues.length);
+            $('#geomean').html(trunk_geomean.toFixed(2));
+            $('#geofaster').html((1 / trunk_geomean).toFixed(1));
+        }
 
         // Plot 1 (per-benchmark normalized comparison) is rendered by the
         // embed_comparison page shown in the iframe above.

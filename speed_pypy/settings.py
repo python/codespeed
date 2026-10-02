@@ -91,6 +91,7 @@ SHOW_REPORTS = False
 SHOW_HISTORICAL = True
 DEF_BASELINES = [
                  {'executable': 'cpython', 'revision': '3.11.15'},
+                 {'executable': 'cpython', 'revision': '3.12.13'},
                 ]
 DEF_EXECUTABLES = [
                    {'name': 'pypy3.12-jit-64', 'project': 'PyPy3.12'},
