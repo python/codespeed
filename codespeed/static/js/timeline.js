@@ -1,448 +1,512 @@
 var Timeline = (function(window){
 
-// Localize globals
-var CHANGES_URL = window.CHANGES_URL, readCheckbox = window.readCheckbox,
+var CHANGES_URL = window.CHANGES_URL,
+    readCheckbox = window.readCheckbox,
     getLoadText = window.getLoadText;
 
-var seriesindex = [],
-    baselineColor = "#d8b83f",
-    seriesColors = ["#4bb2c5", "#EAA228", "#579575", "#953579", "#839557", "#ff5800", "#958c12", "#4b5de4", "#0085cc"],
-    defaults;
+var baselineColor = "#d8b83f",
+    seriesColors = ["#4bb2c5", "#EAA228", "#579575", "#953579", "#839557",
+                    "#ff5800", "#958c12", "#4b5de4", "#0085cc"],
+    defaults,
+    plotInstance = null,
+    miniplotInstances = [];
 
 function setExeColors() {
-  // Set color data attribute for all executables
-  $("#executable > div.boxbody > ul > ul > li > input").each(function(index) {
-    var color_id = index;
-    while (color_id > seriesColors.length) { color_id -= seriesColors.length; }
-    $(this).data('color', seriesColors[color_id]);
-  });
+    $("#executable > div.boxbody > ul > ul > li > input").each(function(index) {
+        $(this).data('color', seriesColors[index % seriesColors.length]);
+    });
 }
 
 function getColor(exe_id) {
-  return $("#executable > div.boxbody")
-                          .find("input[value='"+exe_id+"']")
-                          .data('color');
+    return $("#executable > div.boxbody").find("input[value='" + exe_id + "']").data('color');
 }
 
-function scaleColorAlpha(color, scale) {
-  var c = $.jqplot.getColorComponents(color);
-  c[3] = c[3] * scale;
-  return 'rgba(' + c[0] +', '+ c[1] +', '+ c[2] +', '+ c[3] + ')';
-}
-
-function shouldPlotEquidistant() {
-  return $("#equidistant").is(':checked');
-}
-
-function shouldPlotQuartiles() {
-  return $("#show_quartile_bands").is(':checked');
-}
-
-function shouldPlotExtrema() {
-  return $("#show_extrema_bands").is(':checked');
-}
+function shouldPlotEquidistant() { return $("#equidistant").is(':checked'); }
+function shouldPlotQuartiles()   { return $("#show_quartile_bands").is(':checked'); }
+function shouldPlotExtrema()     { return $("#show_extrema_bands").is(':checked'); }
 
 function getConfiguration() {
-  var config = {
-    exe: readCheckbox("input[name='executable']:checked"),
-    base: $("#baseline option:selected").val(),
-    ben: $("input[name='benchmark']:checked").val(),
-    env: $("input[name='environments']:checked").val(),
-    revs: $("#revisions option:selected").val(),
-    equid: $("#equidistant").is(':checked') ? "on" : "off",
-    quarts: $("#show_quartile_bands").is(':checked') ? "on" : "off",
-    extr: $("#show_extrema_bands").is(':checked') ? "on" : "off"
-  };
-
-  var branch = readCheckbox("input[name='branch']:checked");
-  if (branch) {
-    config.bran = branch;
-  }
-
-  return config;
-}
-
-function permalinkToChanges(commitid, executableid, environment) {
-  window.location=CHANGES_URL + "?rev=" + commitid + "&" + "exe=" + executableid + "&env=" + environment;
-}
-
-function OnMarkerClickHandler(ev, gridpos, datapos, neighbor, plot) {
-  if($("input[name='benchmark']:checked").val() === "grid") { return false; }
-  if (neighbor) {
-    var commitid = neighbor.data[neighbor.data.length-3];
-    // Get executable ID from the seriesindex array
-    var executableid = seriesindex[neighbor.seriesIndex];
-    var environment = $("input[name='environments']:checked").val();
-    permalinkToChanges(commitid, executableid, environment);
-  }
-}
-
-function getHighlighterConfig(median) {
-  if (median) {
-    return {
-      show: true,
-      tooltipLocation: 'nw',
-      yvalues: 8,
-      formatString:'<table class="jqplot-highlighter">    <tr><td>date:</td><td>%s</td></tr> <tr><td>median:</td><td>%s</td></tr> <tr><td>max:</td><td>%s</td></tr> <tr><td>Q3:</td><td>%s</td></tr> <tr><td>Q1:</td><td>%s</td></tr> <tr><td>min:</td><td>%s</td></tr> <tr><td>commit:</td><td>%s</td></tr><tr><td>tag:</td><td>%s</td></tr></table>'
+    var config = {
+        exe:   readCheckbox("input[name='executable']:checked"),
+        base:  $("#baseline option:selected").val(),
+        ben:   $("input[name='benchmark']:checked").val(),
+        env:   $("input[name='environments']:checked").val(),
+        revs:  $("#revisions option:selected").val(),
+        equid: shouldPlotEquidistant() ? "on" : "off",
+        quarts: shouldPlotQuartiles() ? "on" : "off",
+        extr:  shouldPlotExtrema() ? "on" : "off"
     };
-  } else {
-    return {
-      show: true,
-      tooltipLocation: 'nw',
-      yvalues: 5,
-      formatString:'<table class="jqplot-highlighter">    <tr><td>date:</td><td>%s</td></tr> <tr><td>result:</td><td>%s</td></tr> <tr><td>std dev:</td><td>%s</td></tr> <tr><td>commit:</td><td>%s</td></tr><tr><td>tag:</td><td>%s</td></tr></table>'
-    };
-  }
+    var branch = readCheckbox("input[name='branch']:checked");
+    if (branch) { config.bran = branch; }
+    return config;
 }
 
-function determineSignificantDigits(value, digits) {
-  var val = Math.abs(value);
-
-  while (val < 1) {
-    val *= 10;
-    digits++;
-  }
-  return digits;
-}
-
-function renderPlot(data) {
-  var plotdata = [],
-      series = [],
-      smallestValue = Number.MAX_SAFE_INTEGER; // hopefully the smallest values for determining significant digits.
-  seriesindex = [];
-  var hiddenSeries = 0;
-  var median = data['data_type'] === 'M';
-  for (var branch in data.branches) {
-    // NOTE: Currently, only the "default" branch is shown in the timeline
-    for (var exe_id in data.branches[branch]) {
-      // FIXME if (branch !== "default") { label += " - " + branch; }
-      var label = $("label[for*='executable" + exe_id + "']").html();
-      var seriesConfig = {
-        label: label,
-        color: getColor(exe_id)
-      };
-      if (median) {
-        $("span.options.median").css("display", "inline");
-        var mins = new Array();
-        var maxes = new Array();
-        var q1s = new Array();
-        var q3s = new Array();
-        for (res in data["branches"][branch][exe_id]) {
-          var date = data["branches"][branch][exe_id][res][0];
-          var value = data["branches"][branch][exe_id][res][1];
-          var max = data["branches"][branch][exe_id][res][2];
-          var q3 = data["branches"][branch][exe_id][res][3];
-          var q1 = data["branches"][branch][exe_id][res][4];
-          var min = data["branches"][branch][exe_id][res][5];
-          if (min !== "")
-            mins.push([date, min]);
-          if (max !== "")
-            maxes.push([date, max]);
-          if (q1 !== "")
-            q1s.push([date, q1]);
-          if (q3 !== "")
-            q3s.push([date, q3]);
-        }
-        var extrema = new Array(mins, maxes);
-        var quartiles = new Array(q1s, q3s);
-        if (shouldPlotQuartiles()) {
-          seriesConfig['rendererOptions'] = {bandData: quartiles};
-        } else if (shouldPlotExtrema()) {
-          seriesConfig['rendererOptions'] = {bandData: extrema};
-        }
-        if (shouldPlotQuartiles() && shouldPlotExtrema()) {
-          series.push({
-            showLabel: false,
-            showMarker: false,
-            color: scaleColorAlpha(getColor(exe_id), 0.6),
-            rendererOptions: {bandData: extrema}
-          });
-          plotdata.push(data.branches[branch][exe_id]);
-          hiddenSeries++;
-        }
-      }
-      series.push(seriesConfig);
-      seriesindex.push(exe_id);
-      plotdata.push(data.branches[branch][exe_id]);
-
-      // determine smallest non-negative value in lastvalues
-      // (missing values can be represented as -1)
-      var val = data.branches[branch][exe_id][0][1];
-      if (val > 0 && val < smallestValue) {
-        smallestValue = val;
-      }
-    }
-
-    var digits = determineSignificantDigits(smallestValue, 2);
-
-    $("#plotgrid").html('<div id="plot"></div><div id="plotdescription"></div>');
-
-    if (data.benchmark_description) {
-      $("#plotdescription").html('<p class="note"><i>' + data.benchmark + '</i>: ' + data.benchmark_description + '</p>');
-    }
-  }
-  if (data.baseline !== "None") {
-    series.push({
-      "label": $("#baseline option:selected").html(), "color": baselineColor,
-      showMarker: false,
-      lineWidth: 1.5
+function getUrlParams() {
+    var params = {};
+    var search = window.location.search.substring(1) || window.location.hash.replace(/^#\/?/, '');
+    search.split('&').forEach(function(part) {
+        if (!part) { return; }
+        var eq = part.indexOf('=');
+        var key = decodeURIComponent(part.slice(0, eq));
+        var val = decodeURIComponent(part.slice(eq + 1).replace(/\+/g, ' '));
+        params[key] = val;
     });
-    plotdata.push(data.baseline);
-  }
-  var plotoptions = {
-    title: {text: data.benchmark, fontSize: '1.1em'},
-    grid: {borderColor: '#9DADC6', shadow: false, drawBorder: true},
-    series: series,
-    axesDefaults: {
-      tickOptions: {
-        fontFamily: 'Arial'
-      }
-    },
-    axes:{
-      yaxis:{
-        label: data.units + data.lessisbetter,
-        labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
-        min: 0,
-        autoscale: true,
-        tickOptions: {formatString:'%.' + digits + 'f'}
-      },
-      xaxis:{
-        renderer: (shouldPlotEquidistant()) ? $.jqplot.CategoryAxisRenderer : $.jqplot.DateAxisRenderer,
-        label: 'Commit date',
-        labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
-        tickOptions: {formatString:'%b %d'},
-        pad: 1.01,
-        autoscale: true,
-        rendererOptions: {sortMergedLabels:true} /* only relevant when
-                                $.jqplot.CategoryAxisRenderer is used */
-      }
-    },
-    legend: {show: true, location: 'nw'},
-    highlighter: getHighlighterConfig(median),
-    cursor: {show:true, zoom:true, showTooltip:false, clickReset:true}
-  };
-  if (series.length > 4 + hiddenSeries) {
-      // Move legend outside plot area to unclutter
-      var labels = [];
-      for (var l in series) {
-          labels.push(series[l].label.length);
-      }
-
-      var offset = 55 + Math.max.apply( Math, labels ) * 5.4;
-      plotoptions.legend.location = 'ne';
-      plotoptions.legend.xoffset = -offset;
-      $("#plot").css("margin-right", offset + 10);
-      var w = $("#plot").width();
-      $("#plot").css('width', w - offset);
-  }
-  //Render plot
-  $.jqplot('plot',  plotdata, plotoptions);
-}
-
-function renderMiniplot(plotid, data) {
-  var plotdata = [],
-      series = [];
-
-  for (var branch in data.branches) {
-    for (var id in data.branches[branch]) {
-      series.push({
-        "label": $("label[for*='executable" + id + "']").html(),
-        "color": getColor(id)
-      });
-      plotdata.push(data.branches[branch][id]);
-    }
-  }
-  if (data.baseline !== "None") {
-    series.push({
-      "color": baselineColor,
-      showMarker: false,
-      lineWidth: 1.5
-    });
-    plotdata.push(data.baseline);
-  }
-
-  var plotoptions = {
-    title: {text: data.benchmark, fontSize: '1.1em'},
-    grid: {borderColor: '#9DADC6', shadow: false, drawBorder: true},
-    seriesDefaults: {
-      shadow: false,
-      lineWidth: 2,
-      markerOptions: {style:'circle', size: 6}
-    },
-    series: series,
-    axes: {
-      yaxis: {
-        min: 0, autoscale:true, showTicks: false
-      },
-      xaxis: {
-        renderer:$.jqplot.DateAxisRenderer,
-        pad: 1.01,
-        autoscale:true,
-        showTicks: false
-      }
-    },
-    highlighter: {show:false},
-    cursor:{showTooltip: false, style: 'pointer'}
-  };
-  $.jqplot(plotid, plotdata, plotoptions);
-}
-
-function render(data) {
-  $("#revisions").attr("disabled", false);
-  $("#equidistant").attr("disabled", false);
-  $("span.options.median").css("display", "none");
-  if (data.first !== false) {
-    $("#plotgrid").html("");
-  }
-  if(data.error !== "None") {
-    var h = $("#content").height();//get height for error message
-    $("#plotgrid").html(getLoadText(data.error, h));
-    return 1;
-  } else if ($("input[name='benchmark']:checked").val() === "show_none") {
-    var h = $("#content").height();//get height for error message
-    $("#plotgrid").html(getLoadText("Please select a benchmark on the left", h));
-  } else if (data.timelines.length === 0 && data.first !== false) {
-    var h = $("#content").height();//get height for error message
-    $("#plotgrid").html(getLoadText("No data available", h));
-  } else if ($("input[name='benchmark']:checked").val() === "grid") {
-    if (data.nextBenchmarks !== false) {
-      var config = getConfiguration();
-      config.nextBenchmarks = data.nextBenchmarks;
-      $.getJSON("json/", config, render);
-    }
-
-    //Render Grid of plots
-    $("#revisions").attr("disabled",true);
-    $("#equidistant").attr("disabled", true);
-    for (var bench in data.timelines) {
-      var plotid = "plot_" + data.timelines[bench].benchmark_id;
-      $("#plotgrid").append('<div id="' + plotid + '" class="miniplot"></div>');
-      $("#" + plotid).click(function() {
-        var benchid = $(this).attr("id").slice(5);
-        $("#benchmark_" + benchid).prop('checked', true);
-        updateUrl();
-      });
-      renderMiniplot(plotid, data.timelines[bench]);
-    }
-  } else {
-    // render single plot when one benchmark is selected
-    renderPlot(data.timelines[0]);
-    return 1;
-  }
-}
-
-function refreshContent() {
-  var h = $("#content").height();//get height for loading text
-  $("#plotgrid").fadeOut("fast", function() {
-    $("#plotgrid").html(getLoadText("Loading...", h)).show();
-    $.getJSON("json/", getConfiguration(), render);
-  });
+    return params;
 }
 
 function updateUrl() {
-  var cfg = getConfiguration();
-  for (var param in cfg) {
-    $.address.parameter(param, cfg[param]);
-  }
-  $.address.update();
+    history.replaceState(null, '', '?' + $.param(getConfiguration()));
 }
 
-function valueOrDefault(obj, defaultObj) {
-  return (obj) ? obj : defaultObj;
+function destroyPlots() {
+    if (plotInstance) { plotInstance.destroy(); plotInstance = null; }
+    $("#plot").off("mousemove.tooltip");
+    miniplotInstances.forEach(function(g) { g.destroy(); });
+    miniplotInstances = [];
 }
 
-function initializeSite(event) {
-  setValuesOfInputFields(event);
-  $("#revisions"                ).change(updateUrl);
-  $("#baseline"                 ).change(updateUrl);
-  $("input[name='executable']"  ).change(updateUrl);
-  $("input[name='branch']"      ).change(updateUrl);
-  $("input[name='benchmark']"   ).change(updateUrl);
-  $("input[name='environments']").change(updateUrl);
-  $("#equidistant"              ).change(updateUrl);
-  $("#show_quartile_bands"      ).change(updateUrl);
-  $("#show_extrema_bands"       ).change(updateUrl);
-}
+// Build dygraphs-ready data from the branches dict.
+// Returns {labels, colors, data, commitMap, sortedDateKeys, seriesIds}
+// Uses customBars: data rows are [x, [low,mid,high], [low,mid,high], ...]
+function buildGraphData(branches, median, equidistant) {
+    var seriesIds = [];
+    var seriesRaw = {};  // exe_id -> dateKey -> {low, mid, high, commit, tag}
+    var dateIndex = {};  // dateKey -> Date
 
-function refreshSite(event) {
-  setValuesOfInputFields(event);
-  refreshContent();
-}
+    for (var branch in branches) {
+        for (var exe_id in branches[branch]) {
+            seriesIds.push(exe_id);
+            seriesRaw[exe_id] = {};
+            var pts = branches[branch][exe_id];
+            for (var i = 0; i < pts.length; i++) {
+                var pt = pts[i];
+                var dateKey = pt[0];
+                var mid = pt[1];
+                var low, high, commit, tag;
 
-function setValuesOfInputFields(event) {
-  // Either set the default value, or the one parsed from the url
+                if (median) {
+                    // pt: [date, median, max, q3, q1, min, commit, tag, branch]
+                    var q1  = (pt[4] !== "") ? pt[4] : mid;
+                    var q3  = (pt[3] !== "") ? pt[3] : mid;
+                    var min = (pt[5] !== "") ? pt[5] : mid;
+                    var max = (pt[2] !== "") ? pt[2] : mid;
+                    commit = pt[6]; tag = pt[7];
+                    if (shouldPlotExtrema()) {
+                        low = min; high = max;
+                    } else if (shouldPlotQuartiles()) {
+                        low = q1; high = q3;
+                    } else {
+                        low = mid; high = mid;
+                    }
+                } else {
+                    // pt: [date, value, std_dev, commit, tag, branch]
+                    var std = (pt[2] !== "" && pt[2] !== null) ? pt[2] : 0;
+                    low = Math.max(0, mid - std);
+                    high = mid + std;
+                    commit = pt[3]; tag = pt[4];
+                }
 
-  // Reset all checkboxes
-  $("input:checkbox").prop('checked', false);
+                dateIndex[dateKey] = new Date(dateKey.trim());
+                seriesRaw[exe_id][dateKey] = {low: low, mid: mid, high: high,
+                                              commit: commit, tag: tag,
+                                              dateKey: dateKey};
+            }
+        }
+    }
 
-  $("#revisions").val(valueOrDefault(event.parameters.revs, defaults.revisions));
-  $("#baseline").val(valueOrDefault(event.parameters.base, defaults.baseline));
-
-  // Set default selected executables
-  var executables = event.parameters.exe ? event.parameters.exe.split(',') : defaults.executables;
-  var sel = $("input[name='executable']");
-
-  $.each(executables, function(i, exe) {
-    sel.filter("[value='" + exe + "']").prop('checked', true);
-  });
-
-  // Set default selected branches
-  var branches = event.parameters.bran ? event.parameters.bran.split(',') : defaults.branches;
-  sel = $("input[name='branch']");
-
-  $.each(branches, function(i, b) {
-    sel.filter("[value='" + b + "']").prop('checked', true);
-  });
-
-  // Set default selected benchmark
-  var benchmark = valueOrDefault(event.parameters.ben, defaults.benchmark);
-  $("input:radio[name='benchmark']")
-      .filter("[value='" + benchmark + "']")
-      .prop('checked', true);
-
-  // Set default selected environment
-  var environment = valueOrDefault(event.parameters.env, defaults.environment);
-  $("input:radio[name='environments']")
-      .filter("[value='" + environment + "']")
-      .prop('checked', true);
-
-  // Add color legend to executable list
-  $("#executable div.boxbody > ul > ul > li > input").each(function() {
-    $(this).parent()
-      .find("div.seriescolor")
-      .css("background-color", getColor($(this).attr("id").slice(10)));
-  });
-
-  $("#baselinecolor").css("background-color", baselineColor);
-  $("#equidistant").prop('checked', valueOrDefault(event.parameters.equid, defaults.equidistant) === "on");
-  $("#show_quartile_bands").prop('checked', valueOrDefault(event.parameters.quarts, defaults.quartiles) === "on");
-  $("#show_extrema_bands").prop('checked', valueOrDefault(event.parameters.extr, defaults.extrema) === "on");
-}
-
-function init(def) {
-    defaults = def;
-
-    $.ajaxSetup ({
-      cache: false
+    var sortedDateKeys = Object.keys(dateIndex).sort(function(a, b) {
+        return dateIndex[a] - dateIndex[b];
     });
 
-    // Even listener for clicks on plot markers
-    $.jqplot.eventListenerHooks.push(['jqplotClick', OnMarkerClickHandler]);
+    var labels = ['Date'];
+    var colors = [];
+    for (var k = 0; k < seriesIds.length; k++) {
+        var id = seriesIds[k];
+        labels.push($("label[for*='executable" + id + "']").text().trim());
+        colors.push(getColor(id));
+    }
 
-    // Init and change handlers are set to the refreshContent handler
-    $.address.init(initializeSite).change(refreshSite);
+    // commitMap[dateKey][exe_id] = {commit, tag}
+    var commitMap = {};
+    var tsMap = {}; // timestamp (ms) -> dateKey, for legend lookup
+    sortedDateKeys.forEach(function(dk) {
+        tsMap[dateIndex[dk].getTime()] = dk;
+        commitMap[dk] = {};
+        seriesIds.forEach(function(id) {
+            if (seriesRaw[id][dk]) {
+                var pt = seriesRaw[id][dk];
+                commitMap[dk][id] = {commit: pt.commit, tag: pt.tag,
+                                     low: pt.low, high: pt.high};
+            }
+        });
+    });
 
-    $('.checkall, .uncheckall').click(refreshContent);
+    var graphData = sortedDateKeys.map(function(dk, idx) {
+        var xval = equidistant ? idx : dateIndex[dk];
+        var row = [xval];
+        seriesIds.forEach(function(id) {
+            var pt = seriesRaw[id][dk];
+            row.push(pt ? [pt.low, pt.mid, pt.high] : null);
+        });
+        return row;
+    });
 
+    return {labels: labels, colors: colors, data: graphData,
+            commitMap: commitMap, sortedDateKeys: sortedDateKeys,
+            seriesIds: seriesIds, tsMap: tsMap};
+}
+
+function renderPlot(data) {
+    var median = data['data_type'] === 'M';
+    var equidistant = shouldPlotEquidistant();
+
+    $("#plotgrid").html('<div id="plot" style="width:100%;height:420px;"></div>');
+    if (data.benchmark_description) {
+        $("#plotdescription").html(
+            '<p class="note"><i>' + data.benchmark + '</i>: ' + data.benchmark_description + '</p>');
+    }
+
+    if (median) {
+        $("span.options.median").css("display", "inline");
+    }
+
+    var built = buildGraphData(data.branches, median, equidistant);
+    if (built.data.length === 0) {
+        $("#plot").html(getLoadText("No data available", 420));
+        return;
+    }
+
+    // Add baseline as an extra series (no band — flat line)
+    var hasBaseline = data.baseline !== "None";
+    if (hasBaseline) {
+        var baselineLabel = $("#baseline option:selected").text().trim();
+        built.labels.push(baselineLabel);
+        built.colors.push(baselineColor);
+        var baselineVal = data.baseline[0][1];
+        built.data.forEach(function(row) {
+            row.push([baselineVal, baselineVal, baselineVal]);
+        });
+    }
+
+    var commitMap = built.commitMap;
+    var sortedDateKeys = built.sortedDateKeys;
+    var seriesIds = built.seriesIds;
+    var tsMap = built.tsMap;
+    var env = $("input[name='environments']:checked").val();
+
+    // Map label -> color and label -> exeId for tooltip
+    var colorMap = {};
+    var labelToExeId = {};
+    built.labels.slice(1).forEach(function(lbl, i) {
+        colorMap[lbl] = built.colors[i];
+        labelToExeId[lbl] = seriesIds[i];
+    });
+
+    function lookupDateKey(x) {
+        if (equidistant) { return sortedDateKeys[Math.round(x)]; }
+        var dk = tsMap[x];
+        if (!dk) {
+            // find closest
+            dk = sortedDateKeys.reduce(function(best, curr) {
+                return Math.abs(new Date(curr.trim()) - x) <
+                       Math.abs(new Date(best.trim()) - x) ? curr : best;
+            }, sortedDateKeys[0]);
+        }
+        return dk;
+    }
+
+    function legendFormatter(ld) {
+        if (ld.x === undefined) { return ''; }
+        var dk = lookupDateKey(ld.x);
+        var html = '<div style="font-weight:bold;margin-bottom:3px">' +
+                   (dk ? dk.slice(0, 16) : '') + '</div>';
+        ld.series.forEach(function(s) {
+            if (!s.isVisible || s.y === undefined) { return; }
+            var exeId = labelToExeId[s.labelHTML] || labelToExeId[s.name];
+            var color = colorMap[s.labelHTML] || colorMap[s.name] || '#333';
+            html += '<div style="margin:2px 0;color:' + color + '">' +
+                    '<b>' + s.labelHTML + ': ' + s.y.toPrecision(4) + '</b>';
+            if (dk && commitMap[dk] && commitMap[dk][exeId]) {
+                var info = commitMap[dk][exeId];
+                if (info.low !== info.high) {
+                    html += ' <span style="font-weight:normal">[' +
+                            info.low.toPrecision(3) + ' \u2013 ' +
+                            info.high.toPrecision(3) + ']</span>';
+                }
+                html += '<br><span style="font-size:0.85em;font-weight:normal;color:#666">' +
+                        'commit: ' + info.commit;
+                if (info.tag) { html += '&nbsp;&nbsp;tag: ' + info.tag; }
+                html += '</span>';
+            }
+            html += '</div>';
+        });
+        return html;
+    }
+
+    // Per-series options: baseline gets thinner line, no points
+    var seriesOpts = {};
+    built.labels.slice(1).forEach(function(lbl, i) {
+        var isBase = hasBaseline && i === built.labels.length - 2;
+        seriesOpts[lbl] = {
+            strokeWidth: isBase ? 1.5 : 2,
+            drawPoints: !isBase,
+            pointSize: 3,
+            color: built.colors[i]
+        };
+    });
+
+    var xAxisOpts = equidistant ? {
+        axisLabelFormatter: function(idx) {
+            var dk = sortedDateKeys[Math.round(idx)];
+            return dk ? dk.slice(0, 10) : '';
+        },
+        valueFormatter: function(idx) {
+            var dk = sortedDateKeys[Math.round(idx)];
+            return dk ? dk.slice(0, 10) : '';
+        }
+    } : {};
+
+    var lastHighlightPoints = null, lastHighlightX = null;
+
+    plotInstance = new Dygraph(
+        document.getElementById('plot'),
+        built.data,
+        {
+            title: data.benchmark,
+            titleHeight: 24,
+            labels: built.labels,
+            colors: built.colors,
+            customBars: true,
+            series: seriesOpts,
+            legend: 'never',
+            ylabel: data.units + data.lessisbetter,
+            axes: {
+                x: xAxisOpts,
+                y: { valueRange: [0, null] }
+            },
+            connectSeparatedPoints: true,
+            highlightSeriesOpts: { strokeWidth: 3 },
+            highlightCircleSize: 5,
+            highlightCallback: function(e, x, points) {
+                lastHighlightX = x;
+                lastHighlightPoints = points;
+            },
+            unhighlightCallback: function() {
+                lastHighlightPoints = null;
+                $("#dygraph-tooltip").hide();
+            },
+            // Navigate to changes page on point click
+            clickCallback: function(e, x, points) {
+                var dk;
+                if (equidistant) {
+                    dk = sortedDateKeys[Math.round(x)];
+                } else {
+                    dk = sortedDateKeys.reduce(function(best, curr) {
+                        return Math.abs(new Date(curr.trim()) - x) <
+                               Math.abs(new Date(best.trim()) - x) ? curr : best;
+                    }, sortedDateKeys[0]);
+                }
+                if (!dk || !commitMap[dk]) { return; }
+                var id = seriesIds[0];
+                var info = commitMap[dk][id];
+                if (info) {
+                    window.location = CHANGES_URL + "?rev=" + info.commit +
+                                      "&exe=" + id + "&env=" + env;
+                }
+            }
+        }
+    );
+
+    $("#plot").on("mousemove.tooltip", function(e) {
+        var $tip = $("#dygraph-tooltip");
+        if (!lastHighlightPoints) { $tip.hide(); return; }
+        var THRESHOLD = 0.015;
+        var area = plotInstance.getArea();
+        var mx = e.offsetX !== undefined ? e.offsetX : e.layerX;
+        var my = e.offsetY !== undefined ? e.offsetY : e.layerY;
+        var close = lastHighlightPoints.some(function(pt) {
+            if (pt.canvasx === undefined) { return false; }
+            var dx = (mx - pt.canvasx) / area.w;
+            var dy = (my - pt.canvasy) / area.w;
+            return Math.sqrt(dx*dx + dy*dy) < THRESHOLD;
+        });
+        if (close) {
+            var chartOffset = $("#plot").offset();
+            var absX = chartOffset.left + mx;
+            var onRight = absX > $(window).width() / 2;
+            $tip.html(legendFormatter({x: lastHighlightX, series: lastHighlightPoints.map(function(pt) {
+                return {color: colorMap[pt.name] || '#333',
+                        labelHTML: pt.name, name: pt.name,
+                        y: pt.yval, isVisible: true};
+            })}));
+            var tipW = $tip.outerWidth();
+            $tip.css({
+                left: onRight ? (absX - tipW - 18) + 'px' : (absX + 18) + 'px',
+                top:  (chartOffset.top + my - 10) + 'px'
+            }).show();
+        } else {
+            $tip.hide();
+        }
+    });
+}
+
+function renderMiniplot(plotid, data) {
+    var median = data['data_type'] === 'M';
+    var built = buildGraphData(data.branches, median, false);
+    if (built.data.length === 0) { return; }
+
+    if (data.baseline !== "None") {
+        built.labels.push('Baseline');
+        built.colors.push(baselineColor);
+        var bv = data.baseline[0][1];
+        built.data.forEach(function(row) { row.push([bv, bv, bv]); });
+    }
+
+    var g = new Dygraph(
+        document.getElementById(plotid),
+        built.data,
+        {
+            title: data.benchmark,
+            titleHeight: 18,
+            labels: built.labels,
+            colors: built.colors,
+            customBars: true,
+            legend: 'never',
+            axes: {
+                x: { drawAxis: false, drawGrid: false },
+                y: { drawAxis: false, drawGrid: false, valueRange: [0, null] }
+            },
+            connectSeparatedPoints: true,
+            highlightCircleSize: 0
+        }
+    );
+    miniplotInstances.push(g);
+}
+
+function render(data) {
+    $("#revisions").attr("disabled", false);
+    $("#equidistant").attr("disabled", false);
+    $("span.options.median").css("display", "none");
+
+    if (data.first !== false) {
+        destroyPlots();
+        $("#plotgrid").html("");
+        $("#plotdescription").html("");
+    }
+
+    if (data.error !== "None") {
+        var h = $("#content").height();
+        $("#plotgrid").html(getLoadText(data.error, h));
+    } else if ($("input[name='benchmark']:checked").val() === "show_none") {
+        var h = $("#content").height();
+        $("#plotgrid").html(getLoadText("Please select a benchmark on the left", h));
+    } else if (data.timelines.length === 0 && data.first !== false) {
+        var h = $("#content").height();
+        $("#plotgrid").html(getLoadText("No data available", h));
+    } else if ($("input[name='benchmark']:checked").val() === "grid") {
+        if (data.nextBenchmarks !== false) {
+            var config = getConfiguration();
+            config.nextBenchmarks = data.nextBenchmarks;
+            $.getJSON("json/", config, render);
+        }
+        $("#revisions").attr("disabled", true);
+        $("#equidistant").attr("disabled", true);
+        for (var i = 0; i < data.timelines.length; i++) {
+            var tl = data.timelines[i];
+            var plotid = "plot_" + tl.benchmark_id;
+            var $div = $('<div id="' + plotid + '" class="miniplot"></div>');
+            $("#plotgrid").append($div);
+            $div.click(function() {
+                var benchid = $(this).attr("id").slice(5);
+                $("#benchmark_" + benchid).prop('checked', true);
+                updateUrl();
+                refreshContent();
+            });
+            renderMiniplot(plotid, tl);
+        }
+    } else {
+        renderPlot(data.timelines[0]);
+    }
+}
+
+function refreshContent() {
+    var h = $("#content").height();
+    $("#plotgrid").fadeOut("fast", function() {
+        $(this).html(getLoadText("Loading...", h)).show();
+        $.getJSON("json/", getConfiguration(), render);
+    });
+}
+
+function valueOrDefault(val, def) {
+    return (val !== undefined && val !== '') ? val : def;
+}
+
+function setValuesOfInputFields(params) {
+    $("input:checkbox").prop('checked', false);
+
+    $("#revisions").val(valueOrDefault(params.revs, defaults.revisions));
+    $("#baseline").val(valueOrDefault(params.base, defaults.baseline));
+
+    var executables = params.exe ? params.exe.split(',') : defaults.executables;
+    var sel = $("input[name='executable']");
+    $.each(executables, function(i, exe) {
+        sel.filter("[value='" + exe + "']").prop('checked', true);
+    });
+
+    var branches = params.bran ? params.bran.split(',') : defaults.branches;
+    sel = $("input[name='branch']");
+    $.each(branches, function(i, b) {
+        sel.filter("[value='" + b + "']").prop('checked', true);
+    });
+
+    var benchmark = valueOrDefault(params.ben, defaults.benchmark);
+    $("input:radio[name='benchmark']").filter("[value='" + benchmark + "']").prop('checked', true);
+
+    var environment = valueOrDefault(params.env, defaults.environment);
+    $("input:radio[name='environments']").filter("[value='" + environment + "']").prop('checked', true);
+
+    $("#executable div.boxbody > ul > ul > li > input").each(function() {
+        $(this).parent().find("div.seriescolor")
+            .css("background-color", getColor($(this).attr("id").slice(10)));
+    });
+    $("#baselinecolor").css("background-color", baselineColor);
+
+    $("#equidistant").prop('checked', valueOrDefault(params.equid, defaults.equidistant) === "on");
+    $("#show_quartile_bands").prop('checked', valueOrDefault(params.quarts, defaults.quartiles) === "on");
+    $("#show_extrema_bands").prop('checked', valueOrDefault(params.extr, defaults.extrema) === "on");
+}
+
+function initializeSite() {
+    var params = getUrlParams();
+    setValuesOfInputFields(params);
     setExeColors();
+
+    var onChange = function() { updateUrl(); refreshContent(); };
+
+    $("#revisions, #baseline").change(onChange);
+    $("input[name='executable'], input[name='branch'], input[name='benchmark']," +
+      "input[name='environments'], #equidistant, #show_quartile_bands, #show_extrema_bands"
+    ).change(onChange);
+    $('.checkall, .uncheckall').click(onChange);
 
     $("#permalink").click(function() {
         window.location = "?" + $.param(getConfiguration());
     });
+
+    window.addEventListener('popstate', function() {
+        setValuesOfInputFields(getUrlParams());
+        refreshContent();
+    });
+
+    refreshContent();
 }
 
-return {
-    init: init
-};
+function init(def) {
+    defaults = def;
+    $.ajaxSetup({cache: false});
+    initializeSite();
+}
+
+return { init: init };
 
 })(window);

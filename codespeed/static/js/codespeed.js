@@ -43,8 +43,14 @@ $(function() {
 
     $('.togglefold').each(function() {
         var lis = $(this).parent().children("li");
+        var allUnchecked = lis.find("input[type='checkbox']").filter(':checked').length === 0;
+        if (allUnchecked) {
+            lis.hide();
+            $(this).addClass('folded');
+        }
         $(this).click(function() {
             lis.slideToggle();
+            $(this).toggleClass('folded');
             return false;
         });
     });

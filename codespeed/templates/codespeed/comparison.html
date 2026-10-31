@@ -6,7 +6,6 @@
 
 {% block extra_head %}
 {{ block.super }}
-<link rel="stylesheet" type="text/css" href="{% static 'js/jqplot/jquery.jqplot.min.css' %}" />
 {% endblock %}
 
 {% block navigation %}
@@ -48,7 +47,11 @@
   <ul><a href="#" class="togglefold">{{ key }}</a> <a href="#" class="checkall">(All</a>, <a href="#" class="uncheckall">None)</a>
     {% for bench in benchlist|dictsort:"name" %}
     <li title="{{ bench.description }}">
-      <input id="benchmark_{{ bench.id }}" type="checkbox" name="benchmarks" value="{{ bench.id }}" />
+      {% if bench in checkedbenchmarks %}
+        <input id="benchmark_{{ bench.id }}" type="checkbox" name="benchmarks" value="{{ bench.id }}" checked />
+      {% else %}
+        <input id="benchmark_{{ bench.id }}" type="checkbox" name="benchmarks" value="{{ bench.id }}" />
+      {% endif %}
       <label for="benchmark_{{ bench.id }}">{{ bench }}</label>
     </li>{% endfor %}
   </ul>{% endfor %}
@@ -64,10 +67,7 @@
   </span>
   <span class="options" title="Select baseline for normalization">Normalization:
     <select id="baseline">
-      <option value="none">None</option>{% for proj, exes in executables.items %}
-      {% for exe in exes %}
-      <option value="{{ exe.key }}">{{ exe.name }}</option>{% endfor %}
-      {% endfor %}
+      <option value="none">None</option>
     </select>
   </span>
   <span class="options">
@@ -83,13 +83,7 @@
 
 {% block extra_script %}
 {{ block.super }}
-<!--[if lt IE 9]><script language="javascript" type="text/javascript" src="{% static 'js/jqplot/excanvas.min.js' %}"></script><![endif]-->
-<script type="text/javascript" src="{% static 'js/jqplot/jquery.jqplot.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/jqplot/jqplot.barRenderer.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/jqplot/jqplot.categoryAxisRenderer.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/jqplot/jqplot.canvasTextRenderer.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/jqplot/jqplot.canvasAxisTickRenderer.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/jqplot/jqplot.canvasAxisLabelRenderer.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/chart.umd.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/comparison.js' %}"></script>
 
 <script type="text/javascript">
