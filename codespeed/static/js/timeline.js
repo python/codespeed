@@ -128,7 +128,7 @@ function buildGraphData(branches, median, equidistant) {
     var colors = [];
     for (var k = 0; k < seriesIds.length; k++) {
         var id = seriesIds[k];
-        labels.push($("label[for*='executable" + id + "']").text().trim());
+        labels.push($("label[for='executable" + id + "']").text().trim());
         colors.push(getColor(id));
     }
 
@@ -313,7 +313,23 @@ function renderPlot(data) {
                     }, sortedDateKeys[0]);
                 }
                 if (!dk || !commitMap[dk]) { return; }
-                var id = seriesIds[0];
+                // Navigate for the series that was actually clicked
+                var id = null;
+                var hl = plotInstance && plotInstance.getHighlightSeries &&
+                         plotInstance.getHighlightSeries();
+                if (hl && labelToExeId[hl]) { id = labelToExeId[hl]; }
+                if (id === null && points && points.length) {
+                    var mx = e.offsetX !== undefined ? e.offsetX : e.layerX;
+                    var my = e.offsetY !== undefined ? e.offsetY : e.layerY;
+                    var best = null, bestD = Infinity;
+                    points.forEach(function(pt) {
+                        if (pt.canvasx === undefined || !labelToExeId[pt.name]) { return; }
+                        var d = Math.pow(mx - pt.canvasx, 2) + Math.pow(my - pt.canvasy, 2);
+                        if (d < bestD) { bestD = d; best = pt; }
+                    });
+                    if (best) { id = labelToExeId[best.name]; }
+                }
+                if (id === null) { id = seriesIds[0]; }
                 var info = commitMap[dk][id];
                 if (info) {
                     window.location = CHANGES_URL + "?rev=" + info.commit +

@@ -104,7 +104,13 @@ function updateBaselineDropdown() {
 
 function loadData() {
   var conf = getConfiguration();
-  if (!conf.exe || !conf.ben) { return; }
+  if (!conf.exe || !conf.ben) {
+    // Nothing to fetch: clear any previous chart and show the warning
+    chartInstances.forEach(function(c) { c.destroy(); });
+    chartInstances = [];
+    refreshContent();
+    return;
+  }
   var cacheKey = conf.exe + "|" + conf.ben;
   if (dataCache[cacheKey]) {
     compdata = dataCache[cacheKey];
