@@ -234,7 +234,19 @@ div.about_content { text-align: left; }
 .boxbody input { margin-left: 0; vertical-align: top; }
 #options li { margin-bottom: 0.8em; }
 .seriescolor { float: right; margin-top: 2px; height: 13px; width: 14px; }
+.compplot-wrap { display: inline-block; }
 a.togglefold { font-size: normal; color: #000000; }
+a.togglefold::before {
+  content: '▶';
+  display: inline-block;
+  margin-right: 0.3em;
+  font-size: 0.7em;
+  transition: transform 0.2s ease;
+  transform: rotate(90deg);
+}
+a.togglefold.folded::before {
+  transform: rotate(0deg);
+}
 a.checkall, a.uncheckall { font-size: small; color: #AAAAAA; }
 
 p.errormessage { line-height: 10em; margin-bottom: 10em; }
@@ -456,13 +468,25 @@ div.miniplot {
     float: left;
     height: 130px;
     width: 23%;
+    border: 1px solid #9DADC6;
     -moz-border-radius: 10px;
     -webkit-border-radius: 10px;
     border-radius: 10px;
 }
 div.miniplot:hover { background-color: #F1F1F1; }
-.jqplot-highlighter-tooltip {
-    -moz-border-radius: 10px; -webkit-border-radius: 10px; border-radius: 10px;
+
+#dygraph-tooltip {
+    display: none;
+    position: absolute;
+    background: rgba(255,255,255,0.92);
+    border: 1px solid #9DADC6;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 100;
+    white-space: nowrap;
+    box-shadow: 2px 2px 4px rgba(0,0,0,0.15);
 }
 
 div.compplot {

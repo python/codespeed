@@ -162,13 +162,32 @@ def gethistoricaldata(request):
 @require_GET
 def getcomparisondata(request):
     executables, exekeys = getcomparisonexes()
+
+    requested_exes = None
+    if 'exe' in request.GET:
+        requested_exes = set(
+            i for i in request.GET['exe'].split(",") if i and i in exekeys
+        )
+
     benchmarks = Benchmark.objects.all()
+    if 'ben' in request.GET:
+        bench_ids = set()
+        for i in request.GET['ben'].split(","):
+            try:
+                bench_ids.add(int(i))
+            except ValueError:
+                pass
+        if bench_ids:
+            benchmarks = benchmarks.filter(id__in=bench_ids)
+
     environments = Environment.objects.all()
 
     compdata = {}
     compdata['error'] = "Unknown error"
     for proj in executables:
         for exe in executables[proj]:
+            if requested_exes is not None and exe['key'] not in requested_exes:
+                continue
             compdata[exe['key']] = {}
             for env in environments:
                 compdata[exe['key']][env.id] = {}
