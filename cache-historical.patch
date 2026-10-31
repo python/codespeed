@@ -1,0 +1,28 @@
+diff --git a/codespeed/views.py b/codespeed/views.py
+index 5b32483..7254388 100644
+--- a/codespeed/views.py
++++ b/codespeed/views.py
+@@ -15,6 +15,7 @@ from django.http import HttpResponse, Http404, HttpResponseBadRequest, \
+ from django.db.models import F
+ from django.shortcuts import get_object_or_404, render
+ from django.views.decorators.http import require_GET, require_POST
++from django.views.decorators.cache import cache_page
+ from django.views.decorators.csrf import csrf_exempt
+ from django.views.decorators.clickjacking import xframe_options_exempt
+ from django.views.generic.base import TemplateView
+@@ -112,7 +113,15 @@ def embed_comparison(request):
+     return render(request, 'embed_comparison.html', context)
+ 
+ 
++# The historical comparison only changes when new results are saved, which
++# happens at most a few times a day, yet computing it costs ~2s of database
++# time per request.  Cache the rendered JSON server-side and let browsers
++# reuse it too (cache_page also emits a matching Cache-Control: max-age).
++HISTORICAL_CACHE_SECONDS = 15 * 60
++
++
+ @require_GET
++@cache_page(HISTORICAL_CACHE_SECONDS)
+ def gethistoricaldata(request):
+     data = {'results': {}, 'benchmarks': []}
+     env = Environment.objects.all()

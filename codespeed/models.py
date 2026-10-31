@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
-
 import logging
 import os
 import json
@@ -238,7 +235,7 @@ class Result(models.Model):
         Environment, on_delete=models.CASCADE, related_name="results")
 
     def __str__(self):
-        return u"%s: %s" % (self.benchmark.name, self.value)
+        return "%s: %s" % (self.benchmark.name, self.value)
 
     class Meta:
         unique_together = ("revision", "executable", "benchmark", "environment")
@@ -256,7 +253,7 @@ class Report(models.Model):
     _tablecache = models.TextField(blank=True)
 
     def __str__(self):
-        return u"Report for %s" % self.revision
+        return "Report for %s" % self.revision
 
     class Meta:
         unique_together = ("revision", "executable", "environment")
@@ -364,7 +361,7 @@ class Report(models.Model):
         direction = val >= 0 and "up" or "down"
         aval = abs(val)
         if aval == float("inf"):
-            return u"%s ∞%%" % direction
+            return "%s ∞%%" % direction
         else:
             return "%s %.1f%%" % (direction, aval)
 

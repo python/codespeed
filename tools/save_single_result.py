@@ -1,10 +1,10 @@
-# -*- coding: utf-8 -*-
 ####################################################
 # Sample script that shows how to save result data #
 ####################################################
 from datetime import datetime
-import urllib
-import urllib2
+import urllib.error
+import urllib.parse
+import urllib.request
 
 # You need to enter the real URL and have the server running
 CODESPEED_URL = 'http://localhost:8000/'
@@ -34,19 +34,19 @@ data.update({
 
 
 def add(data):
-    params = urllib.urlencode(data)
+    params = urllib.parse.urlencode(data)
     response = "None"
-    print "Saving result for executable %s, revision %s, benchmark %s" % (
-        data['executable'], data['commitid'], data['benchmark'])
+    print("Saving result for executable %s, revision %s, benchmark %s" % (
+        data['executable'], data['commitid'], data['benchmark']))
     try:
-        f = urllib2.urlopen(CODESPEED_URL + 'result/add/', params)
-    except urllib2.HTTPError as e:
-        print str(e)
-        print e.read()
+        f = urllib.request.urlopen(CODESPEED_URL + 'result/add/', params.encode())
+    except urllib.error.HTTPError as e:
+        print(str(e))
+        print(e.read())
         return
     response = f.read()
     f.close()
-    print "Server (%s) response: %s\n" % (CODESPEED_URL, response)
+    print("Server (%s) response: %s\n" % (CODESPEED_URL, response))
 
 if __name__ == "__main__":
     add(data)

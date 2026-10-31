@@ -1,9 +1,10 @@
-# -*- coding: utf-8 -*-
 #######################################################
 # This script saves result data                       #
 # It expects the format of unladen swallow's perf.py  #
 #######################################################
-import urllib, urllib2
+import urllib.error
+import urllib.parse
+import urllib.request
 from datetime import datetime
 
 #SPEEDURL = 'http://127.0.0.1:8000/'
@@ -24,7 +25,7 @@ def save(project, revision, results, options, executable, environment, testing=F
         elif res_type == "ComparisonResult":
             value = results['avg_changed']
         else:
-            print("ERROR: result type unknown " + b[1])
+            print(("ERROR: result type unknown " + b[1]))
             return 1
         data = {
             'commitid': revision,
@@ -43,7 +44,7 @@ def save(project, revision, results, options, executable, environment, testing=F
 
 def send(data):
     #save results
-    params = urllib.urlencode(data)
+    params = urllib.parse.urlencode(data)
     f = None
     response = "None"
     info = str(datetime.today()) + ": Saving result for " + data['executable']
@@ -51,16 +52,16 @@ def send(data):
     info += data['benchmark']
     print(info)
     try:
-        f = urllib2.urlopen(SPEEDURL + 'result/add/', params)
+        f = urllib.request.urlopen(SPEEDURL + 'result/add/', params.encode())
         response = f.read()
         f.close()
-    except urllib2.URLError as e:
+    except urllib.error.URLError as e:
         if hasattr(e, 'reason'):
             response = '\n  We failed to reach a server\n'
             response += '  Reason: ' + str(e.reason)
         elif hasattr(e, 'code'):
             response = '\n  The server couldn\'t fulfill the request\n'
             response += '  Error code: ' + str(e)
-        print("Server (%s) response: %s\n" % (SPEEDURL, response))
+        print(("Server (%s) response: %s\n" % (SPEEDURL, response)))
         return 1
     return 0
