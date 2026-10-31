@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import mock
+from unittest import mock
 
 from django.test import TestCase, override_settings
 from django.http import HttpResponse

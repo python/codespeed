@@ -104,7 +104,7 @@ class TestReport(TestCase):
                 self.make_result(x, rev=s1, benchmark=b1)
         self.make_result(changes[-2] * .97, rev=s1, benchmark=b1)
         rep = self.make_report(s1)
-        self.assertEquals('green', rep.colorcode)
+        self.assertEqual('green', rep.colorcode)
         self.assertIn('b1', rep.summary)
 
     def test_good_average_change_beats_bad_average_trend(self):
@@ -116,7 +116,7 @@ class TestReport(TestCase):
                 self.make_result(x, rev=s1, benchmark=b1)
         self.make_result(changes[-2] * .92, rev=s1, benchmark=b1)
         rep = self.make_report(s1)
-        self.assertEquals('green', rep.colorcode)
+        self.assertEqual('green', rep.colorcode)
         self.assertIn('Average', rep.summary)
 
     def test_good_change_beats_good_trend(self):
@@ -156,7 +156,7 @@ class TestReport(TestCase):
         rep = self.make_report(s1)
         self.assertIn('b1', rep.summary)
         self.assertNotIn('trend', rep.summary)
-        self.assertEquals('red', rep.colorcode)
+        self.assertEqual('red', rep.colorcode)
 
     def test_bad_beats_good_change(self):
         b1 = self.make_bench('b1')
@@ -184,7 +184,7 @@ class TestReport(TestCase):
 
         rep = self.make_report(s2)
         self.assertIn('b1', rep.summary)
-        self.assertEquals('red', rep.colorcode)
+        self.assertEqual('red', rep.colorcode)
 
     def test_multiple_quantities(self):
         b1 = self.make_bench('b1', quantity='Space', units='bytes')
@@ -195,8 +195,8 @@ class TestReport(TestCase):
         self.make_result(1.5, rev=s2, benchmark=b1)
 
         rep = self.make_report(s2)
-        self.assertRegexpMatches(rep.summary, '[sS]pace')
-        self.assertEquals('red', rep.colorcode)
+        self.assertRegex(rep.summary, '[sS]pace')
+        self.assertEqual('red', rep.colorcode)
 
     def make_result(self, value, rev=None, benchmark=None):
         from uuid import uuid4
@@ -280,18 +280,18 @@ class TestProject(TestCase):
 
         # It should work with https:// as well as git:// urls
         self.github_project.save()
-        self.assertEquals(self.github_project.commit_browsing_url,
-                          'https://github.com/tobami/codespeed.git/'
-                          'commit/{commitid}')
+        self.assertEqual(self.github_project.commit_browsing_url,
+                         'https://github.com/tobami/codespeed.git/'
+                         'commit/{commitid}')
 
         self.github_project.repo_path = 'git://github.com/tobami/codespeed.git'
         self.github_project.save()
-        self.assertEquals(self.github_project.commit_browsing_url,
-                          'https://github.com/tobami/codespeed.git/'
-                          'commit/{commitid}')
+        self.assertEqual(self.github_project.commit_browsing_url,
+                         'https://github.com/tobami/codespeed.git/'
+                         'commit/{commitid}')
 
         # If filled in, commit browsing url should not change
         self.github_project.commit_browsing_url = 'https://example.com/{commitid}'
         self.github_project.save()
-        self.assertEquals(self.github_project.commit_browsing_url,
-                          'https://example.com/{commitid}')
+        self.assertEqual(self.github_project.commit_browsing_url,
+                         'https://example.com/{commitid}')

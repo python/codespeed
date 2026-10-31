@@ -5,6 +5,7 @@ import json
 
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from codespeed.models import (Project, Benchmark, Revision, Branch, Executable,
                               Environment, Result, Report)
@@ -36,15 +37,15 @@ class TestAddResult(TestCase):
         response = self.client.post(self.path, self.data)
 
         # Check that we get a success response
-        self.assertEquals(response.status_code, 202)
-        self.assertEquals(response.content.decode(), "Result data saved successfully")
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.content.decode(), "Result data saved successfully")
 
         # Check that the data was correctly saved
         e = Environment.objects.get(name='Dual Core')
         b = Benchmark.objects.get(name='float')
-        self.assertEquals(b.benchmark_type, "C")
-        self.assertEquals(b.units, "seconds")
-        self.assertEquals(b.lessisbetter, True)
+        self.assertEqual(b.benchmark_type, "C")
+        self.assertEqual(b.units, "seconds")
+        self.assertEqual(b.lessisbetter, True)
         p = Project.objects.get(name='MyProject')
         branch = Branch.objects.get(name='default', project=p)
         r = Revision.objects.get(commitid='23', branch=branch)
@@ -68,15 +69,15 @@ class TestAddResult(TestCase):
         modified_data['max'] = 2
         modified_data['min'] = 1.0
         response = self.client.post(self.path, modified_data)
-        self.assertEquals(response.status_code, 202)
-        self.assertEquals(response.content.decode(), "Result data saved successfully")
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.content.decode(), "Result data saved successfully")
         e = Environment.objects.get(name='Dual Core')
         p = Project.objects.get(name='MyProject')
         branch = Branch.objects.get(name='default', project=p)
         r = Revision.objects.get(commitid='23', branch=branch)
 
-        # Tweak the resolution down to avoid failing over very slight differences:
-        self.assertEquals(r.date, revision_date)
+        # Posted datetimes are naive and interpreted in the current time zone
+        self.assertEqual(r.date, timezone.make_aware(revision_date))
 
         i = Executable.objects.get(name='myexe O3 64bits')
         b = Benchmark.objects.get(name='float')
@@ -86,19 +87,19 @@ class TestAddResult(TestCase):
             benchmark=b,
             environment=e
         )
-        self.assertEquals(res.date, result_date)
-        self.assertEquals(res.std_dev, 1.11111)
-        self.assertEquals(res.val_max, 2)
-        self.assertEquals(res.val_min, 1)
+        self.assertEqual(res.date, timezone.make_aware(result_date))
+        self.assertEqual(res.std_dev, 1.11111)
+        self.assertEqual(res.val_max, 2)
+        self.assertEqual(res.val_min, 1)
 
     def test_bad_environment(self):
         """Should return 400 when environment does not exist"""
         bad_name = '10 Core'
         self.data['environment'] = bad_name
         response = self.client.post(self.path, self.data)
-        self.assertEquals(response.status_code, 400)
-        self.assertEquals(response.content.decode(),
-                          "Environment " + bad_name + " not found")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content.decode(),
+                         "Environment " + bad_name + " not found")
         self.data['environment'] = 'Dual Core'
 
     def test_empty_argument(self):
@@ -107,20 +108,20 @@ class TestAddResult(TestCase):
             backup = self.data[key]
             self.data[key] = ""
             response = self.client.post(self.path, self.data)
-            self.assertEquals(response.status_code, 400)
-            self.assertEquals(
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(
                 response.content.decode(),
                 'Value for key "' + key + '" empty in request')
             self.data[key] = backup
 
     def test_missing_argument(self):
         """Should respond 400 when a POST request is missing an argument"""
-        for key in self.data:
+        for key in list(self.data):
             backup = self.data[key]
-            del(self.data[key])
+            del self.data[key]
             response = self.client.post(self.path, self.data)
-            self.assertEquals(response.status_code, 400)
-            self.assertEquals(
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(
                 response.content.decode(),
                 'Key "' + key + '" missing from request')
             self.data[key] = backup
@@ -130,7 +131,7 @@ class TestAddResult(TestCase):
         self.client.post(self.path, self.data)
         number_of_reports = len(Report.objects.all())
         # After adding one result for one revision, there should be no reports
-        self.assertEquals(number_of_reports, 0)
+        self.assertEqual(number_of_reports, 0)
 
     def test_report_is_created(self):
         """Should create a report when adding a result for two revisions"""
@@ -142,15 +143,15 @@ class TestAddResult(TestCase):
         # Second result should trigger report creation
         self.client.post(self.path, modified_data)
         number_of_reports = len(Report.objects.all())
-        self.assertEquals(number_of_reports, 1)
+        self.assertEqual(number_of_reports, 1)
 
     def test_submit_data_with_none_timestamp(self):
         """Should add a default revision date when timestamp is None"""
         modified_data = copy.deepcopy(self.data)
-        # The value None will get urlencoded and converted to a "None" string
-        modified_data['revision_date'] = None
+        # Older clients urlencoded None as the string "None"
+        modified_data['revision_date'] = "None"
         response = self.client.post(self.path, modified_data)
-        self.assertEquals(response.status_code, 202)
+        self.assertEqual(response.status_code, 202)
 
     def test_add_result_with_no_project(self):
         """Should add a revision with the project"""
@@ -158,8 +159,8 @@ class TestAddResult(TestCase):
         modified_data['project'] = "My new project"
         modified_data['executable'] = "My new executable"
         response = self.client.post(self.path, modified_data)
-        self.assertEquals(response.status_code, 202)
-        self.assertEquals(
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(
             response.content.decode(), "Result data saved successfully")
 
 
@@ -210,7 +211,7 @@ class TestAddJSONResults(TestCase):
         response = self.client.get(self.path,
                                    {'json': json.dumps(self.data)})
 
-        self.assertEquals(response.status_code, 405)
+        self.assertEqual(response.status_code, 405)
 
     def test_add_correct_results(self):
         """Should add all results when the request data is valid"""
@@ -218,16 +219,16 @@ class TestAddJSONResults(TestCase):
                                     {'json': json.dumps(self.data)})
 
         # Check that we get a success response
-        self.assertEquals(response.status_code, 202)
-        self.assertEquals(response.content.decode(),
-                          "All result data saved successfully")
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.content.decode(),
+                         "All result data saved successfully")
 
         # Check that the data was correctly saved
         e = Environment.objects.get(name='bigdog')
         b = Benchmark.objects.get(name='Richards')
-        self.assertEquals(b.benchmark_type, "C")
-        self.assertEquals(b.units, "seconds")
-        self.assertEquals(b.lessisbetter, True)
+        self.assertEqual(b.benchmark_type, "C")
+        self.assertEqual(b.units, "seconds")
+        self.assertEqual(b.lessisbetter, True)
         p = Project.objects.get(name='pypy')
         branch = Branch.objects.get(name='default', project=p)
         r = Revision.objects.get(commitid='123', branch=branch)
@@ -271,8 +272,8 @@ class TestAddJSONResults(TestCase):
         response = self.client.post(self.path,
                                     {'json': json.dumps(self.data)})
 
-        self.assertEquals(response.status_code, 400)
-        self.assertEquals(
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
             response.content.decode(), "Environment " + bad_name + " not found")
         data['environment'] = 'bigdog'
 
@@ -284,8 +285,8 @@ class TestAddJSONResults(TestCase):
             data[key] = ""
             response = self.client.post(self.path,
                                         {'json': json.dumps(self.data)})
-            self.assertEquals(response.status_code, 400)
-            self.assertEquals(
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(
                 response.content.decode(),
                 'Value for key "' + key + '" empty in request')
             data[key] = backup
@@ -293,13 +294,13 @@ class TestAddJSONResults(TestCase):
     def test_missing_argument(self):
         '''Should return 400 when making a request with a missing argument'''
         data = self.data[2]
-        for key in data:
+        for key in list(data):
             backup = data[key]
-            del(data[key])
+            del data[key]
             response = self.client.post(self.path,
                                         {'json': json.dumps(self.data)})
-            self.assertEquals(response.status_code, 400)
-            self.assertEquals(
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(
                 response.content.decode(), 'Key "' + key + '" missing from request')
             data[key] = backup
 
@@ -310,13 +311,13 @@ class TestAddJSONResults(TestCase):
                                     {'json': json.dumps(self.data)})
 
         # Check that we get a success response
-        self.assertEquals(response.status_code, 202)
+        self.assertEqual(response.status_code, 202)
 
         number_of_reports = len(Report.objects.all())
         # After adding 4 result for 3 revisions, only 2 reports should be created
         # The third revision will need an extra result for Richards2 in order
         # to trigger report creation
-        self.assertEquals(number_of_reports, 1)
+        self.assertEqual(number_of_reports, 1)
 
 
 class TestTimeline(TestCase):
@@ -326,17 +327,17 @@ class TestTimeline(TestCase):
         """Test the loaded fixture data
         """
         env = Environment.objects.filter(name="Dual Core")
-        self.assertEquals(len(env), 1)
+        self.assertEqual(len(env), 1)
         benchmarks = Benchmark.objects.filter(name="float")
-        self.assertEquals(len(benchmarks), 1)
-        self.assertEquals(benchmarks[0].units, "seconds")
+        self.assertEqual(len(benchmarks), 1)
+        self.assertEqual(benchmarks[0].units, "seconds")
         results = benchmarks[0].results.all()
-        self.assertEquals(len(results), 8)
+        self.assertEqual(len(results), 8)
 
     def test_timeline(self):
         path = reverse('timeline')
         response = self.client.get(path)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         responsedata = response.content.decode()
         self.assertIn('My Own Title\n: Timeline', responsedata)
 
@@ -352,28 +353,28 @@ class TestTimeline(TestCase):
             "revs": "2"
         }
         response = self.client.get(path, data)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         responsedata = json.loads(response.getvalue().decode())
 
-        self.assertEquals(
+        self.assertEqual(
             responsedata['error'], "None", "there should be no errors")
-        self.assertEquals(
+        self.assertEqual(
             len(responsedata['timelines']), 1, "there should be 1 benchmark")
-        self.assertEquals(
+        self.assertEqual(
             len(responsedata['timelines'][0]['branches']),
             2,
             "there should be 2 branches")
-        self.assertEquals(
+        self.assertEqual(
             len(responsedata['timelines'][0]['branches']['default']),
             1,
             "there should be 1 timeline for master")
-        self.assertEquals(
+        self.assertEqual(
             len(responsedata['timelines'][0]['branches']['master']['1']),
             2,
             "There are 2 datapoints")
-        self.assertEquals(
+        self.assertEqual(
             responsedata['timelines'][0]['branches']['master']['1'][1],
-            [u'2011/04/13 17:04:22 ', 2000.0, 1.11111, u'2', u'', u'master'])
+            [u'2011/04/13 17:04:22 +0000', 2000.0, 1.11111, u'2', u'', u'master'])
 
 
 @override_settings(ALLOW_ANONYMOUS_POST=True)
