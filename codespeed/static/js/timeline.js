@@ -43,13 +43,19 @@ function getConfiguration() {
 
 function getUrlParams() {
     var params = {};
-    var search = window.location.search.substring(1) || window.location.hash.replace(/^#\/?/, '');
+    // Accept both "?a=b" and the legacy jquery.address form "#/?a=b"
+    var search = window.location.search.substring(1) || window.location.hash.replace(/^#\/?\??/, '');
     search.split('&').forEach(function(part) {
         if (!part) { return; }
         var eq = part.indexOf('=');
-        var key = decodeURIComponent(part.slice(0, eq));
-        var val = decodeURIComponent(part.slice(eq + 1).replace(/\+/g, ' '));
-        params[key] = val;
+        if (eq === -1) { eq = part.length; }
+        try {
+            var key = decodeURIComponent(part.slice(0, eq));
+            var val = decodeURIComponent(part.slice(eq + 1).replace(/\+/g, ' '));
+            params[key] = val;
+        } catch (err) {
+            // ignore malformed percent-encoding rather than breaking page init
+        }
     });
     return params;
 }
