@@ -6,20 +6,19 @@
 <div id="about" class="about_content clearfix">
 <h3>About this site</h3>
 <p>We have nightly benchmark runs of PyPy, together with CPython data for
-comparison. The benchmarks have run since 2016 on a dedicated machine
+comparison. The benchmarks ran from 2016-2026 on a dedicated machine
 named <b>benchmarker</b>. Previously, we had other machines (<b>tannit</b> and
-briefly <b>speed-python</b>). The <b>benchmarker</b> machine is generously
-donated by <a href="https://baroquesoftware.com">Baroque Software</a>. The
-specs are:</p>
-<ul><li>Processor: Intel(R) Core(TM) i7-7700 CPU @ 3.60GHz with turbo enabled</li>
-<li>RAM: 64GB Micron DDR4 2400 MHz</li>
-<li>Disk: 4TB TOSHIBA MG04ACA4</li>
-</ul>
-<p>Benchmarks are also run on <b>benchmarker2</b>:</p>
-<ul><li>Processor: AMD Ryzen 5 3600 pinned to 3.60GHz, turnbo disabled</li>
-<li>RAM: 64GB</li>
+briefly <b>speed-python</b>). The <b>benchmarker</b> machine was generously
+donated by <a href="https://baroquesoftware.com">Baroque Software</a>. Since mid-2026
+the benchmarks are running on benchmarker2, which is a <a
+href=https://www.hetzner.com/dedicated-rootserver/ax41/">Hetzner AX41-NVMe</a>
+machine donated by Hetzner. The specs are:</p>
+<ul><li>Processor: AMD Ryzen™ 5 3600 CPU with turbo disabled</li>
+<li>RAM: 64GB Micron DDR4 MHz</li>
+<li>Disk: two 512 GB NVMe SSDs in RAID 0</li>
 <li>Benchmarking pinned with cpuset partitions to CPUs3,4,5 with SMT
-(hyper-threading) disabled </li>
+(hyper-threading) disabled, other machine operations are pinned to CPUs 1,2,3
+</li>
 </ul>
 
 <h3>About the benchmarks</h3>
@@ -39,7 +38,7 @@ speed.python.org</a> site.</p>
 <a href="https://github.com/tobami/codespeed">Codespeed</a> is a web application
 to monitor and analyze the performance of your code.
 <p>The source code of this website can be found on the
-<a href="https://github.com/python/codespeed/tree/speed.pypy.org"><code>PyPy</code>
+<a href="https://github.com/python/codespeed/tree/speed.pypy.org"><code>speed.pypy.org</code>
 branch</a> of the Python fork of codespeed{% if commit %},
 currently at commit <a href="https://github.com/python/codespeed/commit/{{ commit }}"><code>{{ commit|slice:":12" }}</code></a>{% endif %}.</p>
 

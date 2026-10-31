@@ -12,6 +12,10 @@ from codespeed.models import (Project, Benchmark, Revision, Branch, Executable,
 
 hgdir = ''
 
+# hg aborts on commit when ui.username is unset, which is the case on a CI
+# runner with no ~/.hgrc, so supply one explicitly.
+HG_USER = ['-u', 'Codespeed Tests <tests@example.com>']
+
 def setUpModule():
     global hgdir
     hgdir = tempfile.TemporaryDirectory()
@@ -22,11 +26,13 @@ def setUpModule():
     with open(readme, 'w') as hg_file:
         hg_file.write('readme')
     subprocess.check_call(['hg', 'add', readme], cwd=hgdir.name)
-    subprocess.check_call(['hg', 'commit', '-m', "first commit"], cwd=hgdir.name)
+    subprocess.check_call(['hg', 'commit', '-m', "first commit"] + HG_USER,
+                          cwd=hgdir.name)
     with open(file1, 'w') as hg_file:
         hg_file.write('value = 10')
     subprocess.check_call(['hg', 'add', file1], cwd=hgdir.name)
-    subprocess.check_call(['hg', 'commit', '-m', "second commit"], cwd=hgdir.name)
+    subprocess.check_call(['hg', 'commit', '-m', "second commit"] + HG_USER,
+                          cwd=hgdir.name)
 
 def tearDownModule():
     hgdir.cleanup()
