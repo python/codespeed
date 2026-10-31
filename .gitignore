@@ -11,3 +11,4 @@ override
 build
 dist
 *.egg-info
+.venv*/
