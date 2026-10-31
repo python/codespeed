@@ -2,9 +2,9 @@
 from __future__ import absolute_import
 
 import logging
-from datetime import datetime
 
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from .models import (Environment, Project, Branch, Benchmark, Executable,
                      Revision, Result, Report)
@@ -119,7 +119,7 @@ def save_result(data, update_repo=True):
     elif rev.date:
         r.date = rev.date
     else:
-        r.date = datetime.now()
+        r.date = timezone.now()
 
     r.std_dev = data.get('std_dev')
     r.val_min = data.get('min')
