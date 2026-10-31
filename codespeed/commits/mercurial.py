@@ -24,7 +24,7 @@ class Mercurial:
                 return
 
             p = Popen(['hg', 'pull', '-u'], stdout=PIPE, stderr=PIPE,
-                        cwd=project.working_copy)
+                      cwd=project.working_copy)
             stdout, stderr = p.communicate()
 
             if p.returncode != 0 or stderr:
@@ -37,7 +37,7 @@ class Mercurial:
             cmd = ['hg', 'clone', project.repo_path, project.repo_name]
 
             p = Popen(cmd, stdout=PIPE, stderr=PIPE,
-                        cwd=settings.REPOSITORY_BASE_PATH)
+                      cwd=settings.REPOSITORY_BASE_PATH)
             logger.debug('Cloning Mercurial repo {0} for project {1}'.format(
                 project.repo_path, project))
             stdout, stderr = p.communicate()
@@ -52,9 +52,11 @@ class Mercurial:
     def get_logs(self, endrev, startrev):
         self.update_repo(update=False)
 
+        template = ("{rev}:{node|short}\n{node}\n{author|user}\n"
+                    "{author|email}\n{date}\n{desc}\n=newlog=\n")
         cmd = ["hg", "log",
-                "-r", "%s::%s" % (startrev.commitid, endrev.commitid),
-                "--template", "{rev}:{node|short}\n{node}\n{author|user}\n{author|email}\n{date}\n{desc}\n=newlog=\n"]
+               "-r", "%s::%s" % (startrev.commitid, endrev.commitid),
+               "--template", template]
 
         working_copy = self.project.working_copy
         p = Popen(cmd,
@@ -86,7 +88,8 @@ class Mercurial:
 
                     # Parse date
                     date = date.split('-')[0]
-                    date = datetime.datetime.fromtimestamp(float(date)).strftime("%Y-%m-%d %H:%M:%S")
+                    date = datetime.datetime.fromtimestamp(
+                        float(date)).strftime("%Y-%m-%d %H:%M:%S")
 
                     # Add changeset info
                     logs.append({

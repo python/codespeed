@@ -52,7 +52,7 @@ def save_result(data, update_repo=True):
     if error:
         return res, True
     else:
-        assert(isinstance(res, Environment))
+        assert isinstance(res, Environment)
         env = res
 
     p, created = Project.objects.get_or_create(name=data["project"])

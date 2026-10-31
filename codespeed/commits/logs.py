@@ -16,7 +16,7 @@ def get_scm(project):
     elif project.repo_type == project.GIT:
         from .git import getlogs, updaterepo
     elif project.repo_type == project.GITHUB:
-        from .github import getlogs, updaterepo
+        from .github import getlogs, updaterepo  # noqa: F401
     else:
         return None
 
@@ -50,6 +50,7 @@ def _get_commit_date(project, commit_id):
         return None
 
     return scm.get_commit_date(commit_id)
+
 
 def get_commit_date(project, commit_id):
     date = _get_commit_date(project, commit_id)

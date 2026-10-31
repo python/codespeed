@@ -145,7 +145,8 @@ class Revision(models.Model):
             date = None
         else:
             date = self.date.isoformat(sep=" ")
-        string = " - ".join(filter(None, (date, self.commitid, self.tag, self.branch.name)))
+        string = " - ".join(
+            filter(None, (date, self.commitid, self.tag, self.branch.name)))
         return string
 
     class Meta:

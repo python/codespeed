@@ -1,0 +1,40 @@
+name: Tests
+
+on:
+  push:
+    branches: [speed.python.org]
+  pull_request:
+    branches: [speed.python.org]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements-dev.txt
+      - run: flake8 codespeed
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
+        django: ["5.2", "6.1"]
+    name: Python ${{ matrix.python-version }} / Django ${{ matrix.django }}
+    env:
+      DJANGO_SETTINGS_MODULE: sample_project.settings
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -r requirements.txt "django==${{ matrix.django }}.*"
+      - run: python manage.py test codespeed
