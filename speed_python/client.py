@@ -1,10 +1,8 @@
-# encoding: utf-8
-
-from urlparse import urljoin
 import logging
 import platform
-import urllib
 import sys
+from urllib.parse import urlencode, urljoin
+from urllib.request import urlopen
 
 
 def save_to_speedcenter(url=None, project=None, commitid=None, executable=None,
@@ -57,7 +55,7 @@ def save_to_speedcenter(url=None, project=None, commitid=None, executable=None,
     if not data.get('environment', None):
         data['environment'] = platform.platform(aliased=True)
 
-    f = urllib.urlopen(url, urllib.urlencode(data))
+    f = urlopen(url, urlencode(data).encode())
 
     response = f.read()
     status = f.getcode()
@@ -117,6 +115,6 @@ if __name__ == "__main__":
     try:
         save_to_speedcenter(**kwargs)
         sys.exit(0)
-    except StandardError, e:
+    except Exception as e:
         logging.error("Error saving results: %s", e)
         sys.exit(1)

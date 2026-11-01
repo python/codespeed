@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Default settings for Codespeed"""
 
 ## General default options ##

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Adds the default branch to all existing revisions
 
 Note: This file is assumed to be in the same directory

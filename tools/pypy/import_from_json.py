@@ -1,8 +1,10 @@
-# -*- coding: utf-8 -*-
 ################################################################################
 # This script imports PyPy's result data from json files located on the server #
 ################################################################################
-import simplejson, urllib2
+import json
+import urllib.error
+import urllib.parse
+import urllib.request
 import sys
 from xml.dom.minidom import parse
 from datetime import datetime
@@ -21,7 +23,7 @@ for INTERP in RESULTS_URLS:
     # get json filenames
     filelist = []
     try:
-        datasource = urllib2.urlopen(RESULTS_URL)
+        datasource = urllib.request.urlopen(RESULTS_URL)
         dom = parse(datasource)
         for elem in dom.getElementsByTagName('td'):
             for e in elem.childNodes:
@@ -31,7 +33,7 @@ for INTERP in RESULTS_URLS:
                         if int(filename.replace(".json", "")) >= START_REV and\
                             int(filename.replace(".json", "")) <= END_REV:
                             filelist.append(filename)
-    except urllib2.URLError, e:
+    except urllib.error.URLError as e:
         response = "None"
         if hasattr(e, 'reason'):
             response = '\n  We failed to reach ' + RESULTS_URL + '\n'
@@ -39,16 +41,16 @@ for INTERP in RESULTS_URLS:
         elif hasattr(e, 'code'):
             response = '\n  The server couldn\'t fulfill the request\n'
             response += '  Error code: ' + str(e)
-        print "Results Server (%s) response: %s\n" % (RESULTS_URL, response)
+        print("Results Server (%s) response: %s\n" % (RESULTS_URL, response))
         sys.exit(1)
     finally:
         datasource.close()
 
     # read json result and save to speed.pypy.org
     for filename in filelist:
-        print "Reading %s..." % filename
-        f = urllib2.urlopen(RESULTS_URL + filename)
-        result = simplejson.load(f)
+        print("Reading %s..." % filename)
+        f = urllib.request.urlopen(RESULTS_URL + filename)
+        result = json.load(f)
         f.close()
         proj = PROJECT
         revision = result['revision']
@@ -62,4 +64,4 @@ for INTERP in RESULTS_URLS:
         #saveresults.save(proj, revision, result['results'], options, interpreter, host)
         if filename == filelist[len(filelist)-1]:
             savecpython.save('cpython', '100', result['results'], options, 'cpython', host)
-print "\nOK"
+print("\nOK")

@@ -1,21 +1,12 @@
-# encoding: utf-8
 """
 Specialized Git backend which uses Github.com for all of the heavy work
 
 Among other things, this means that the codespeed server doesn't need to have
 git installed, the ability to write files, etc.
 """
-from __future__ import absolute_import
 
 import logging
-try:
-    # Python 3
-    from urllib.request import urlopen
-    from urllib.request import Request
-except ImportError:
-    # Python 2
-    from urllib2 import urlopen
-    from urllib2 import Request
+from urllib.request import urlopen, Request
 import re
 import json
 

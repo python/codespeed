@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from datetime import datetime, timedelta
 import copy
 import json
@@ -374,7 +373,7 @@ class TestTimeline(TestCase):
             "There are 2 datapoints")
         self.assertEqual(
             responsedata['timelines'][0]['branches']['master']['1'][1],
-            [u'2011/04/13 17:04:22 +0000', 2000.0, 1.11111, u'2', u'', u'master'])
+            ['2011/04/13 17:04:22 +0000', 2000.0, 1.11111, '2', '', 'master'])
 
 
 @override_settings(ALLOW_ANONYMOUS_POST=True)

@@ -1,5 +1,7 @@
 import timeit
-import urllib
+import urllib.error
+import urllib.parse
+import urllib.request
 import sys
 
 
@@ -16,12 +18,12 @@ def test_overview():
         "executable": "1",
         "host": "bigdog",
     }
-    params = urllib.urlencode(data)
-    page = urllib.urlopen(SPEEDURL + 'overview/table/?' + params)
+    params = urllib.parse.urlencode(data)
+    page = urllib.request.urlopen(SPEEDURL + 'overview/table/?' + params)
     jsonstring = page.read()
     page.close()
     if not '<table id="results" class="tablesorter">' in jsonstring:
-        print "bad overview response"
+        print("bad overview response")
         sys.exit(1)
 
 
@@ -33,30 +35,30 @@ def test_timeline(bench):
         "host": "bigdog",
         "revisions": 200
     }
-    params = urllib.urlencode(data)
-    page = urllib.urlopen(SPEEDURL + 'timeline/json/?' + params)
+    params = urllib.parse.urlencode(data)
+    page = urllib.request.urlopen(SPEEDURL + 'timeline/json/?' + params)
     jsonstring = page.read()
     #print jsonstring
     page.close()
     if not '"lessisbetter": " (less is better)", "baseline":' in jsonstring \
         or not', "error": "None"}' in jsonstring:
-        print "bad timeline response"
+        print("bad timeline response")
         sys.exit(1)
 
 if __name__ == "__main__":
     t = timeit.Timer('test_overview()', 'from __main__ import test_overview')
     results = t.repeat(20, 1)
-    print
-    print "OVERVIEW RESULTS"
-    print "min:", min(results)
-    print "avg:", sum(results) / len(results)
-    print
-    print "TIMELINE RESULTS"
+    print()
+    print("OVERVIEW RESULTS")
+    print("min:", min(results))
+    print("avg:", sum(results) / len(results))
+    print()
+    print("TIMELINE RESULTS")
     for bench in benchmarks:
         t = timeit.Timer('test_timeline("' + bench + '")',
             'from __main__ import test_timeline')
         results = t.repeat(20, 1)
-        print "benchmark =", bench
-        print "min:", min(results)
-        print "avg:", sum(results) / len(results)
-    print
+        print("benchmark =", bench)
+        print("min:", min(results))
+        print("avg:", sum(results) / len(results))
+    print()
