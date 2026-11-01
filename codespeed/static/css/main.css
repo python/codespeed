@@ -457,6 +457,8 @@ a#permalink {
     font-size: 0.9em;
 }
 a#permalink svg { width: 1.1em; height: 1.1em; }
+a#exportcsv { margin-left: auto; font-size: small; }
+a#exportcsv + a#permalink { margin-left: 1em; }
 
 /* Plot styles */
 div#plot { text-align: left; height: 500px; width: 100%; }
