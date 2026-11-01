@@ -98,12 +98,15 @@ ul#links {
 }
 ul#links li { margin-left: 0.25em; }
 ul#links li a:link, ul#links li a:visited {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
     padding: 0.35em 0.75em;
     color: var(--text-muted);
     border-radius: var(--radius-sm);
     text-decoration: none;
 }
+ul#links li a svg { width: 1.05em; height: 1.05em; overflow: visible; stroke: currentColor; stroke-width: 0.6; stroke-linejoin: round; }
 ul#links li a:hover, ul#links li a:focus {
     color: var(--text);
     background-color: var(--surface-alt);
@@ -215,7 +218,14 @@ div#configbar span.options { padding-right: 1.8em; font-size: 0.9em; white-space
 div#configbar input { margin-right: 0; vertical-align: middle; }
 div#configbar select { margin: 0 0.3em; }
 
-div#contentnav a { font-size: 0.9em; padding-bottom: 0.25em; }
+div#contentnav a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    font-size: 0.9em;
+    padding-bottom: 0.25em;
+}
+div#contentnav a svg { width: 1.1em; height: 1.1em; }
 div#contentnav #previous { float: left; }
 div#contentnav #next { float: right; }
 
@@ -263,15 +273,21 @@ div.about_content p, div.about_content li, div.about_content h2, div.about_conte
 a.togglefold { color: var(--text); font-weight: 500; }
 a.togglefold:hover { text-decoration: none; }
 a.togglefold::before {
-    content: '▶';
+    /* Bootstrap Icons chevron-right (MIT, twbs/icons), coloured via mask */
+    content: '';
     display: inline-block;
+    width: 0.8em;
+    height: 0.8em;
     margin-right: 0.35em;
-    font-size: 0.65em;
-    color: var(--text-faint);
+    vertical-align: -0.05em;
+    background-color: var(--text-muted);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' stroke='%23000' stroke-width='1.2' stroke-linejoin='round' d='M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708'/%3E%3C/svg%3E") no-repeat center / contain;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' stroke='%23000' stroke-width='1.2' stroke-linejoin='round' d='M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708'/%3E%3C/svg%3E") no-repeat center / contain;
     transition: transform 0.15s ease;
     transform: rotate(90deg);
 }
 a.togglefold.folded::before { transform: rotate(0deg); }
+a.togglefold:hover::before { background-color: var(--text); }
 .checklinks { font-size: 0.85em; color: var(--text-faint); }
 a.checkall, a.uncheckall { color: var(--text-faint); }
 a.checkall:hover, a.uncheckall:hover { color: var(--accent); }
