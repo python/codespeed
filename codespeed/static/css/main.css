@@ -75,6 +75,7 @@ div#title {
     padding: 0.4em var(--gap);
     background-color: var(--surface);
     border-bottom: 1px solid var(--border);
+    border-radius: 0 0 var(--radius) var(--radius);
 }
 div#title a { display: inline-flex; align-items: center; }
 div#title img { display: block; height: 40px; padding: 0; margin: 0; }
@@ -184,10 +185,19 @@ div#presentation div.menubox:hover {
 div#presentation div.menubox h2 { font-size: 1.1em; font-weight: 600; }
 div#presentation div.menubox p { color: var(--text-muted); }
 
-div#presentation p { min-height: 5.5em; margin: 0.6em 0 0; padding-left: 118px; text-align: left; }
-div#presentation div#changes p { background: url(../images/changes.png) no-repeat; }
-div#presentation div#timeline p { background: url(../images/timeline.png) no-repeat; }
-div#presentation div#comparison p { background: url(../images/comparison.png) no-repeat; }
+/* The three icons differ in size (98 to 147px wide); scale them to one height */
+div#presentation p {
+    min-height: 5.5em;
+    margin: 0.6em 0 0;
+    padding-left: 122px;
+    text-align: left;
+    background-repeat: no-repeat;
+    background-position: 0 0.2em;
+    background-size: auto 65px;
+}
+div#presentation div#changes p { background-image: url(../images/changes.png); }
+div#presentation div#timeline p { background-image: url(../images/timeline.png); }
+div#presentation div#comparison p { background-image: url(../images/comparison.png); }
 
 div#presentation div#reports { margin-top: 1em; }
 
@@ -214,7 +224,11 @@ div#content, div.about_content {
     text-align: center;
     padding: 1em;
 }
-div.about_content { text-align: left; }
+div.about_content { text-align: left; max-width: calc(100ch + 2em); }
+/* Keep prose readable: wrap paragraphs at roughly 100 characters */
+div.about_content p, div.about_content li, div.about_content h2, div.about_content h3 {
+    max-width: 100ch;
+}
 
 .sidebox {
     overflow: hidden;
@@ -297,7 +311,7 @@ table.reports caption {
     font-size: 1em;
     font-weight: 600;
     margin-bottom: 0.4em;
-    text-align: left;
+    text-align: center;
 }
 table.reports caption a { color: var(--text); }
 table.reports caption a img { border: 0; vertical-align: middle; height: 14px; margin-bottom: 1px; }
@@ -415,7 +429,14 @@ tbody.commits tr td.date { padding: 0.3em; width: 5em; text-align: right; }
     overflow: auto;
 }
 
-a#permalink { float: right; font-size: 0.9em; }
+a#permalink {
+    float: right;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25em;
+    font-size: 0.9em;
+}
+a#permalink svg { width: 1.1em; height: 1.1em; }
 
 /* Plot styles */
 div#plot { text-align: left; height: 500px; width: 100%; }
