@@ -37,4 +37,4 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: pip install -r requirements.txt "django==${{ matrix.django }}.*"
-      - run: python manage.py test codespeed
+      - run: python manage.py test codespeed speed_python

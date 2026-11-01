@@ -118,4 +118,16 @@ STATICFILES_DIRS = (
 # Codespeed settings that can be overwritten here.
 from codespeed.settings import *
 
+HOME_GEOMEAN_SERIES = [
+    {'executable': 'lto-pgo',
+     'project': 'CPython',
+     'branch': 'main',
+     'environment':
+     'speed-python'},
+    {'executable': 'lto-pgo',
+     'project': 'CPython',
+     'branch': 'main',
+     'environment': 'ampere-one'},
+]
+
 from .local_settings import *

@@ -1,4 +1,10 @@
 {% extends "codespeed/base_site.html" %}
+{% load static %}
+
+{% block extra_head %}
+  <link rel="stylesheet" type="text/css" href="{% static 'css/dygraph.css' %}" />
+  <link rel="stylesheet" type="text/css" href="{% static 'css/home.css' %}" />
+{% endblock %}
 
 {% block navigation %}
 {% endblock navigation %}
@@ -24,12 +30,26 @@
         </div>
     </a>
     <br />
+    <div id="geomean">
+      <h3>How has performance changed over the last 30 days?</h3>
+      <div id="geomean-plot"
+           data-url="{% url 'gethomegeomeandata' %}"
+           data-changes-url="{% url 'changes' %}"></div>
+      <div id="geomean-legend"></div>
+      <p class="plot-caption">
+        Geometric mean of all benchmark times, relative to the first run in the
+        window. Lower is faster. Each line is one executable on one machine;
+        click a point to open that commit's results.
+      </p>
+    </div>
     <div id="reports"></div>
 </div>
 {% endblock body %}
 
 {% block extra_script %}
 {{ block.super }}
+<script type="text/javascript" src="{% static 'js/dygraph.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/home_geomean.js' %}"></script>
 <script type="text/javascript">
     function permalinkToChanges(permalink) {
         window.location=permalink;
