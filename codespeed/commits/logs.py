@@ -4,21 +4,54 @@ from __future__ import absolute_import, unicode_literals
 import datetime
 import logging
 
+from .exceptions import CommitLogError
+
 logger = logging.getLogger(__name__)
 
 
+class FunctionBackend:
+    """Adapter giving the function-based backends (GitHub, Subversion) the
+    same interface as the Mercurial and Git classes."""
+
+    def __init__(self, project, module):
+        self.project = project
+        self.module = module
+
+    def update_repo(self, update=True):
+        # These backends talk to a remote service; there is no clone to
+        # create, so only "update" means anything.
+        if update:
+            return self.module.updaterepo(self.project)
+
+    def get_logs(self, endrev, startrev):
+        return self.module.getlogs(endrev, startrev)
+
+    def get_commit_date(self, commit_id):
+        lookup = getattr(self.module, 'get_commit_date', None)
+        if lookup is None:
+            return None  # not supported; callers fall back to today's date
+        return lookup(self.project, commit_id)
+
+
 def get_scm(project):
-    if project.repo_type == project.SUBVERSION:
-        from .subversion import getlogs, updaterepo
-    elif project.repo_type == project.MERCURIAL:
+    """Return a backend object for the project, or None if logs are off.
+
+    Every backend has update_repo(update), get_logs(endrev, startrev) and
+    get_commit_date(commit_id).
+    """
+    if project.repo_type == project.MERCURIAL:
         from .mercurial import Mercurial
         return Mercurial(project)
     elif project.repo_type == project.GIT:
-        from .git import getlogs, updaterepo
+        from .git import Git
+        return Git(project)
     elif project.repo_type == project.GITHUB:
-        from .github import getlogs, updaterepo  # noqa: F401
-    else:
-        return None
+        from . import github
+        return FunctionBackend(project, github)
+    elif project.repo_type == project.SUBVERSION:
+        from . import subversion
+        return FunctionBackend(project, subversion)
+    return None
 
 
 def get_logs(rev, startrev, update=False):
@@ -33,7 +66,7 @@ def get_logs(rev, startrev, update=False):
         return logs
 
     if update:
-        scm.update_repo(project)
+        scm.update_repo()
 
     logs = scm.get_logs(rev, startrev)
 
@@ -49,7 +82,13 @@ def _get_commit_date(project, commit_id):
     if scm is None:
         return None
 
-    return scm.get_commit_date(commit_id)
+    try:
+        return scm.get_commit_date(commit_id)
+    except CommitLogError as e:
+        # A missing clone or unknown commit must not break result submission
+        logger.warning("Could not get the date of commit %r of project %s: %s",
+                       commit_id, project, e)
+        return None
 
 
 def get_commit_date(project, commit_id):
