@@ -26,7 +26,7 @@ function getLoadText(text, h) {
 $(function() {
     // Check all and none links
     $('.checkall').each(function() {
-        var inputs = $(this).parent().children("li").children("input");
+        var inputs = $(this).closest("ul").children("li").children("input");
         $(this).click(function() {
             inputs.prop("checked", true);
             return false;
@@ -34,7 +34,7 @@ $(function() {
     });
 
     $('.uncheckall').each(function() {
-        var inputs = $(this).parent().children("li").children("input");
+        var inputs = $(this).closest("ul").children("li").children("input");
         $(this).click(function() {
             inputs.prop("checked", false);
             return false;
