@@ -449,14 +449,18 @@ tbody.commits tr td.date { padding: 0.3em; width: 5em; text-align: right; }
     overflow: auto;
 }
 
-a#permalink {
+a#permalink, a#exportcsv {
     margin-left: auto;
     display: inline-flex;
     align-items: center;
     gap: 0.25em;
     font-size: 0.9em;
 }
-a#permalink svg { width: 1.1em; height: 1.1em; }
+a#permalink svg, a#exportcsv svg { width: 1.1em; height: 1.1em; }
+/* The download glyph fills its 16px grid, the link glyph does not;
+   shrink it slightly so the two look the same size. */
+a#exportcsv svg { width: 0.95em; height: 0.95em; }
+a#exportcsv + a#permalink { margin-left: 1em; }
 
 /* Plot styles */
 div#plot { text-align: left; height: 500px; width: 100%; }
@@ -577,6 +581,4 @@ div.footer a:hover { color: var(--accent); text-decoration: underline; }
 
 /* speed.pypy.org additions */
 .envlinecolor { float: right; font-size: 12px; line-height: 18px; color: #555; }
-a#exportcsv { margin-left: auto; font-size: small; }
-a#exportcsv + a#permalink { margin-left: 1em; }
 a#exportcsv:hover { text-decoration: underline; }
