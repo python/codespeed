@@ -209,6 +209,10 @@ div#sidebar { width: var(--sidebar-width); float: left; }
 
 div#configbar {
     position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 0.3em;
     margin-left: calc(var(--sidebar-width) + 0.8em);
     margin-bottom: 0.8em;
     padding: 0.7em 1em;
@@ -446,7 +450,7 @@ tbody.commits tr td.date { padding: 0.3em; width: 5em; text-align: right; }
 }
 
 a#permalink {
-    float: right;
+    margin-left: auto;
     display: inline-flex;
     align-items: center;
     gap: 0.25em;
