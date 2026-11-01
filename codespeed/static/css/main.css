@@ -186,7 +186,7 @@ div#presentation div.menubox h2 { font-size: 1.1em; font-weight: 600; }
 div#presentation div.menubox p { color: var(--text-muted); }
 
 /* The three icons differ in size (98 to 147px wide); scale them to one height */
-div#presentation p {
+div#presentation div.menubox p {
     min-height: 5.5em;
     margin: 0.6em 0 0;
     padding-left: 122px;
@@ -279,10 +279,10 @@ a.checkall:hover, a.uncheckall:hover { color: var(--accent); }
 p.errormessage { line-height: 10em; margin-bottom: 10em; }
 
 /* Home page history section */
-div#historical { max-width: 800px; margin: 0 auto; padding-bottom: 3em; text-align: left; }
+div#historical { max-width: 800px; margin: 0 auto; padding-bottom: 3em; text-align: center; }
 div#baseline-comparison-plot { width: 750px; height: 400px; margin: 0 auto; }
 div#historical-plot { width: 600px; height: 400px; margin: 0 auto; }
-div#historical p { padding-left: 0; }
+div#historical p { margin: 0.6em 0 1em; }
 div#historical p.plot-caption { font-size: 0.9em; color: var(--text-muted); }
 
 /* Changes page layout */
