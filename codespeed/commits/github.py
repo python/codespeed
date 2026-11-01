@@ -126,6 +126,16 @@ def retrieve_revision(commit_id, username, project, revision=None):
             'tag':          tag}
 
 
+def get_commit_date(project, commit_id):
+    """Committer date of `commit_id` from the GitHub API, or None."""
+    m = GITHUB_URL_RE.match(project.repo_path.rstrip('/'))
+    if not m:
+        raise CommitLogError(
+            "Unable to parse Github URL %s" % project.repo_path)
+    data = retrieve_revision(commit_id, m.group("username"), m.group("project"))
+    return data['date'] if data else None
+
+
 def getlogs(endrev, startrev):
     if endrev != startrev:
         revisions = endrev.branch.revisions.filter(

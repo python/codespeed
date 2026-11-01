@@ -42,6 +42,34 @@ def updaterepo(project, update=True):
             return [{'error': False}]
 
 
+def get_commit_date(project, commit_id):
+    """Author date of `commit_id` as a naive UTC datetime, or None."""
+    updaterepo(project, update=False)
+    fmt = '%ct' if getattr(settings, 'GIT_USE_COMMIT_DATE', False) else '%at'
+    cmd = ['git', 'log', '-1', '--format=' + fmt, commit_id]
+    p, stdout, stderr = execute_command(cmd, project.working_copy)
+    if p.returncode != 0 or not stdout.strip():
+        logger.warning("%s returned %s: %s", " ".join(cmd), p.returncode, stderr)
+        return None
+    return datetime.datetime.utcfromtimestamp(int(stdout.strip()))
+
+
+class Git:
+    """Git backend with the same interface as commits.mercurial.Mercurial."""
+
+    def __init__(self, project):
+        self.project = project
+
+    def update_repo(self, update=True):
+        return updaterepo(self.project, update=update)
+
+    def get_logs(self, endrev, startrev):
+        return getlogs(endrev, startrev)
+
+    def get_commit_date(self, commit_id):
+        return get_commit_date(self.project, commit_id)
+
+
 def getlogs(endrev, startrev):
     updaterepo(endrev.branch.project, update=False)
 
