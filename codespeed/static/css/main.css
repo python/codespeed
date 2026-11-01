@@ -7,7 +7,7 @@
  */
 
 :root {
-    --font-sans: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    --font-sans: "Fira Sans", Helvetica, Arial, sans-serif;
     --font-mono: "Menlo", "ProFont", "Inconsolata", "Lucida Sans Console", monospace;
 
     --page-bg: #f3f4f6;
@@ -81,11 +81,10 @@ div#title a { display: inline-flex; align-items: center; }
 div#title img { display: block; height: 40px; padding: 0; margin: 0; }
 div#title h2 {
     margin: 0;
-    font-size: 1.15em;
-    font-weight: 600;
+    font-size: 1.3em;
+    font-weight: 700;
     font-style: normal;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    letter-spacing: 0.01em;
     color: var(--text);
 }
 
@@ -94,7 +93,7 @@ ul.inline li { display: inline-block; list-style: none; }
 
 ul#links {
     margin: 0 0 0 auto;
-    font-size: 0.95em;
+    font-size: 1.1em;
 }
 ul#links li { margin-left: 0.25em; }
 ul#links li a:link, ul#links li a:visited {

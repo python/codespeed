@@ -6,6 +6,10 @@
     <meta name="description" content="{% block description %}A performance analysis tool for software projects. It shows performance regresions and allows comparing different applications or implementations{% endblock %}">
     <meta name="keywords" content="performance, test, plots, charts">
     <meta charset="UTF-8">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    {# Fira Sans, regular and bold, subset to printable ASCII #}
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;700&amp;display=swap&amp;text=%20%21%22%23%24%25%26%27%28%29%2A%2B%2C-.%2F0123456789%3A%3B%3C%3D%3E%3F%40ABCDEFGHIJKLMNOPQRSTUVWXYZ%5B%5C%5D%5E_%60abcdefghijklmnopqrstuvwxyz%7B%7C%7D~" rel="stylesheet">
     <link href="{% static 'css/main.css' %}" rel="stylesheet" type="text/css">
     {% block extra_head %}{% endblock %}
   </head>
@@ -19,7 +23,7 @@
             <img src="{% static 'images/logo.svg' %}" height="48" alt="logo"/>
           {% endblock logo %}
           </a>
-          <h2>{% block page_title %}SPEED CENTER{% endblock page_title %}</h2>
+          <h2>{% block page_title %}Speed Center{% endblock page_title %}</h2>
           {% block top_nav %}
             {# Icons: Bootstrap Icons house-door and info-circle (MIT, twbs/icons) #}
             <ul id="links" class="inline">
