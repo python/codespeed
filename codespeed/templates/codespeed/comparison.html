@@ -30,7 +30,7 @@
   <div class="boxhead"><h2>Executables</h2></div>
   <div class="boxbody">
     {% for proj, executable in executables.items %}
-    <ul><a href="#" class="togglefold">{{ proj }}</a> <a href="#" class="checkall">(All</a>, <a href="#" class="uncheckall">None)</a>
+    <ul><a href="#" class="togglefold">{{ proj }}</a> <span class="checklinks">(<a href="#" class="checkall">All</a>, <a href="#" class="uncheckall">None</a>)</span>
     {% for exe in executable %}
       <li title="{{ exe.executable }} - {{ exe.revision }}">
         {% if exe.key in checkedexecutables %}
@@ -47,7 +47,7 @@
   <div class="boxhead"><h2>Benchmarks</h2></div>
   <div class="boxbody">
   {% for key,benchlist in benchmarks.items %}
-  <ul><a href="#" class="togglefold">{{ key }}</a> <a href="#" class="checkall">(All</a>, <a href="#" class="uncheckall">None)</a>
+  <ul><a href="#" class="togglefold">{{ key }}</a> <span class="checklinks">(<a href="#" class="checkall">All</a>, <a href="#" class="uncheckall">None</a>)</span>
     {% for bench in benchlist|dictsort:"name" %}
     <li title="{{ bench.description }}">
       {% if bench in checkedbenchmarks %}
@@ -74,10 +74,10 @@
     </select>
   </span>
   <span class="options">
-    <label for="direction">horizontal</label>
+    <label for="direction">Horizontal:</label>
     <input id="direction" type="checkbox" name="direction" value="horizontal"/>
   </span>
-  <a id="permalink" href="#">Permalink</a>
+  {% include "codespeed/permalink.html" %}
   <a id="exportcsv" href="#">Export CSV</a>
 </div>
 <div id="graph-title" style="text-align:center; padding:8px 0; font-size:15px;"></div>
