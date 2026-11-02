@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 from django.urls import re_path
-from django.views.generic import TemplateView
 
 from codespeed import views
 from codespeed.feeds import LatestEntries, LatestSignificantEntries
 
 urlpatterns = [
     re_path(r'^$', views.HomeView.as_view(), name='home'),
-    re_path(r'^about/$',
-        TemplateView.as_view(template_name='about.html'), name='about'),
+    re_path(r'^about/$', views.about, name='about'),
     # RSS for reports
     re_path(r'^feeds/latest/$', LatestEntries(), name='latest-results'),
     re_path(r'^feeds/latest_significant/$', LatestSignificantEntries(),

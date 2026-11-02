@@ -1,119 +1,132 @@
 {% extends "codespeed/base_site.html" %}
-{% block title %}{{ block.super }}: About this site{% endblock %}
+{% load static %}
+{% block title %}{{ block.super }}: About{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" type="text/css" href="{% static 'css/about.css' %}" />
+{% endblock %}
+
 {% block body %}
 <div id="sidebar">
 </div>
 <div id="about" class="about_content clearfix">
 
-<h3>About this site</h3>
-<p>Welcome to the speed.python.org project - this project is aimed at
-constructing a shared benchmark system based on the excellent
-<a href="https://speed.pypy.org/" target="_blank">speed.pypy.org</a>
-project.
-</p>
+<h2>About the Python Speed Center</h2>
+<p>The <a href="https://speed.python.org/">Python Speed Center</a>
+is the public performance dashboard for <a href="https://www.python.org/">CPython</a>.
+Every night it builds the current development branch and the maintenance
+branches from source, runs the <a href="https://github.com/python/pyperformance">pyperformance</a>
+benchmark suite on dedicated hardware, and records the results here so that
+anyone can see how the interpreter's speed changes commit by commit.</p>
 
-<p>This project will setup a common, shared instance of the benchmarking
-suite and visualization tools put together by the
-<a href="https://pypy.org/" target="_blank">PyPy team</a>, based on work
-from the <a href="https://code.google.com/p/unladen-swallow/" target="_blank">
-Unladen Swallow project</a>.
-</p>
+<h2>Executables and machines</h2>
+<p>On this site an <em>executable</em> is a particular way of building
+CPython and an <em>environment</em> is the machine it ran on. The names below
+are the ones that can be selected in the sidebars.</p>
 
-<p>Coming out of the PyCon 2011 VM and language summits, it was commonly
-agreed that PyPy, CPython, IronPython and Jython should strive to move
-to a common set of benchmarks and a single performance-oriented site.
-This was agreed upon by the maintainers present at the conference, and
-included leads from all of the major implementations. This project
-would be lead by the various VM development teams, and based around
-the Unladen Swallow/PyPy benchmark suite.
-</p>
+<table class="about-table">
+  <thead>
+    <tr><th>Environment</th><th>Machine</th><th>Results</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>speed-python</code></td>
+      <td>x86-64: <a href="#machine-x86">HP ProLiant DL380 G7</a> at OSUOSL</td>
+      <td>October 2021 to present</td>
+    </tr>
+    <tr>
+      <td><code>ampere-one</code></td>
+      <td>AArch64: <a href="#machine-aarch64">Ampere One server</a> hosted by Arm</td>
+      <td>August 2025 to present</td>
+    </tr>
+    <tr class="retired">
+      <td><code>arm-neoverse</code></td>
+      <td>AArch64: the previous Arm Neoverse machine, replaced by
+      <code>ampere-one</code></td>
+      <td>May 2023 to August 2025</td>
+    </tr>
+    <tr class="retired">
+      <td><code>bb-benchmark-machine</code></td>
+      <td>A separate, short-lived benchmark worker</td>
+      <td>October 2021 to March 2023</td>
+    </tr>
+    <tr class="retired">
+      <td><code>speed-python-historical</code></td>
+      <td>Results from before the current <code>speed-python</code>
+      environment was set up, kept for reference</td>
+      <td>November 2020 to October 2021</td>
+    </tr>
+  </tbody>
+</table>
 
-<p>Once set up, this site will be prominently linked on Python.org, and serve
-as a resource for all Python users - both existing and potential - to evaluate
-the various Python runtimes on both performance, memory usage, etc. Our goal is
-to provide a resource that will both educate and assist users, maintainers and
-the community as a whole.
-</p>
+<p>Retired environments no longer receive results but are kept so that old
+data stays reachable through the Timeline and Comparison pages.</p>
 
-<p>You can see the announcement, and more details at the announcement of the
-machine acquisition on
-<a href="https://web.archive.org/web/20170824021111/http://jessenoller.com/2011/06/29/announcing-the-new-speed-python-org-machine/" target="_blank">
-Jesse Noller's blog.</a></p>
-
-<p>For now, only CPython is being benchmarked, but we hope to expand in the future.</p>
-
-<h3>The Benchmark Machines</h3>
-
-<p>On speed.python.org both <b>x86</b> and <b>AArch64</b> architectures are being
-measured. Below the specs of the machines used.</p>
-
-<h4>The x86 machine</h4>
-<p>Nicknamed "the beast", the  machine was generously donated to the Python
-Software foundation by the <a href="https://hp.com/go/linux" target="_blank">
-HP Open Source Program office</a>.</p>
-
-<p>The hardware specs are:
+<h3 id="machine-x86">The x86-64 machine (<code>speed-python</code>)</h3>
+<p>Nicknamed "the beast", this server was donated to the Python Software
+Foundation by the HP Open Source Program Office in 2011. The acquisition was
+announced on
+<a href="https://web.archive.org/web/20170824021111/http://jessenoller.com/2011/06/29/announcing-the-new-speed-python-org-machine/">Jesse
+Noller's blog</a>.</p>
 <ul>
-    <li>DL380 HP DL380G7 X5670 LFF (2U)</li>
-    <li>Dual HP NC382i Dual Port Multifunction Gigabit Server Adapters</li>
-    <li>HP Smart Array P410i/1GB FBWC Controller</li>
-    <li>4x 4GB (1x4GB) Dual Rank x4 PC3-10600 (DDR3-1333) Registered CAS-9
-    Memory Kit</li>
-    <li>2x HP 750W Common Slot Gold Hot Plug Power Supply Kit</li>
-    <li>HP iLO Advanced including 1yr 24x7 Technical Support and Updates
-    Electronic  License</li>
-    <li>4x HP 300GB 6G SAS 15K rpm LFF (3.5-inch) Dual Port Enterprise 3yr
-    Warranty Hard Drive</li>
-    <li>2 HP DL380 G7 Intel® Xeon® X5680 (3.33GHz/6-core/130W/12MB) FIO
-    Processor Kit</li>
+  <li>HP ProLiant DL380 G7 (2U)</li>
+  <li>2&times; Intel Xeon X5680, 3.33&nbsp;GHz, 6 cores each, 12&nbsp;MB cache</li>
+  <li>16&nbsp;GB RAM (4&times; 4&nbsp;GB DDR3-1333 registered, dual rank)</li>
+  <li>4&times; 300&nbsp;GB 15k rpm SAS drives on an HP Smart Array P410i
+  controller with 1&nbsp;GB flash-backed write cache, hardware RAID with a
+  simple LVM layout</li>
+  <li>Dual HP NC382i dual-port gigabit adapters, redundant 750&nbsp;W power
+  supplies, iLO Advanced</li>
+  <li>Ubuntu 18.04 LTS</li>
 </ul>
-The machine is configured with Ubuntu 18.04 LTS, HW RAID and a simple LVM setup.
-HP's generous donation can not be spoken of highly enough.
-</p>
+<p>Racking, hardware administration and all bandwidth are donated by the
+<a href="https://osuosl.org/">Oregon State University Open Source Lab</a>
+(OSUOSL), long-standing supporters of open source and of the PSF. We are very
+grateful to both HP and OSUOSL.</p>
 
-<p>The racking, stacking and hardware administration and all bandwidth has been
-generously donated by the <a href="https://osuosl.org/" target="_blank">
-The Oregon State University Open Source Lab</a> (OSUOSL)
-who have been amazing open source supporters, and supporters of the Python
-Software foundation.</p>
-
-<p>We can not thank OSUOSL enough for the hosting and administration.</p>
-
-<h4>The AArch64 machine</h4>
-<p>The machine was generously donated by <a href="https://www.arm.com">
-Arm Ltd</a> to the PSF.</p>
-
-<p>The hardware specs are:
+<h3 id="machine-aarch64">The AArch64 machine (<code>ampere-one</code>)</h3>
+<p>This server was donated to the PSF by <a href="https://www.arm.com/">Arm
+Ltd</a>, who also host it.</p>
 <ul>
-  <li>192 Ampere 64-bit, Arm v8.6+. 3.6Ghz, L2: 2MB/core, L1: 16KB ICache/core, 64KB DCache/core</li>
-  <li>512 GB (8 x 64 GB DDR5 Registered (Buffered) @ 5200 MT/s)</li>
-  <li>1x1.7TB NVMe, 1x3.5TB NVMe</li>
-  <li>2x10Gbps</li>
+  <li>Ampere One, 192 cores, 64-bit Armv8.6+, 3.6&nbsp;GHz</li>
+  <li>Per core: 2&nbsp;MB L2, 16&nbsp;KB L1 instruction cache, 64&nbsp;KB L1
+  data cache</li>
+  <li>512&nbsp;GB RAM (8&times; 64&nbsp;GB DDR5-5200 registered)</li>
+  <li>1.7&nbsp;TB and 3.5&nbsp;TB NVMe drives</li>
+  <li>2&times; 10&nbsp;Gbps networking</li>
+  <li>Ubuntu 24.04 LTS, managed through the
+  <a href="https://github.com/python/psf-salt">PSF Salt infrastructure</a>;
+  <a href="https://github.com/diegorusso">Diego Russo</a> has serial console
+  access</li>
 </ul>
+<p>We cannot thank Arm enough for the hardware, the hosting and the
+administration.</p>
 
-The machine is configured with Ubuntu 24.04.3 LTS and managed by the
-<a href="https://github.com/python/psf-salt">PSF Salt Infrastructure</a>. Also
-<a href="https://github.com/diegorusso">Diego Russo</a> has serial access to it.</p>
+<h2>History</h2>
+<p>The Speed Center started as a shared project between the CPython, PyPy,
+IronPython and Jython teams. At the PyCon 2011 VM and language summits the
+maintainers of the major implementations agreed to move to a common benchmark
+suite and a single performance-oriented site, modelled on the PyPy team's
+<code>speed.pypy.org</code> and using the Codespeed software they had adopted. HP donated
+the first machine the same year. Today the site focuses on CPython, results
+for PyPy can be found on <a href="https://speed.pypy.org/">speed.pypy.org</a>.</p>
 
-<p>The machine is hosted by <a href="https://www.arm.com/">Arm Ltd</a>.</p>
-<p>We can not thank Arm enough for the hosting and administration.</p>
+<h2>Software</h2>
+<p>This site runs on <a href="https://github.com/tobami/codespeed">Codespeed</a>,
+a Django application for tracking and analysing the performance of a code
+base over time. The Speed Center's own fork, including the templates and
+styling you are looking at, is maintained at
+<a href="https://github.com/python/codespeed/tree/speed.python.org">python/codespeed</a>
+on the <code>speed.python.org</code> branch{% if commit %},
+currently at commit <a href="https://github.com/python/codespeed/commit/{{ commit }}"><code>{{ commit|slice:":12" }}</code></a>{% endif %}.</p>
 
-<h3>About the benchmarks</h3>
-<p>The code can be found <a href="https://github.com/python/pyperformance">here</a>.</p>
-
-<h3>About Python</h3>
-<p>Python is a programming language that lets you work quickly and integrate systems more effectively.</p>
-<p>Main website: <a href="https://python.org/">python.org</a></p>
-
-<h3>About Codespeed</h3>
-Codespeed is a web application to monitor and analyze the performance of your code.
-<p>Original Code: <a href="https://github.com/tobami/codespeed">github.com/tobami/codespeed</a></p>
-<p>Code for this site: <a href="https://github.com/python/codespeed/tree/speed.python.org">github.com/python/codespeed</a></p>
-<p>Wiki: <a href="https://github.com/tobami/codespeed/wiki">github.com/tobami/codespeed/wiki</a></p>
-
-<h3>Contact</h3>
-<p>For problems or suggestions about this website write to us on
-    <a href="https://discuss.python.org/c/core-dev/23">discuss.python.org</a>.
-    </p>
+<h2>Contact</h2>
+<p>Questions, problems and suggestions about this site are welcome in the
+<a href="https://discuss.python.org/c/core-dev/23">Core Development</a>
+category on discuss.python.org. Problems with the site's code can be reported
+on the <a href="https://github.com/python/codespeed/issues">python/codespeed
+issue tracker</a>, and problems with the benchmarks themselves on the
+<a href="https://github.com/python/pyperformance/issues">pyperformance
+tracker</a>.</p>
 </div>
 {% endblock %}

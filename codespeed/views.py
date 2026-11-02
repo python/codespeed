@@ -3,6 +3,8 @@ from __future__ import absolute_import, unicode_literals
 
 import json
 import logging
+import os
+import subprocess
 
 import django
 from django.conf import settings
@@ -985,3 +987,21 @@ def makeimage(request):
     response['Content-Disposition'] = 'attachment; filename=image.png'
 
     return response
+
+
+def _get_current_commit():
+    try:
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        return subprocess.check_output(
+            ['git', 'rev-parse', 'HEAD'],
+            cwd=repo_root,
+            stderr=subprocess.DEVNULL,
+        ).decode().strip()
+    except Exception:
+        return None
+
+_CURRENT_COMMIT = _get_current_commit()
+
+
+def about(request):
+    return render(request, 'about.html', {'commit': _CURRENT_COMMIT})
