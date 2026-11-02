@@ -130,3 +130,11 @@ Please, also refer to the [Django URL dispatcher docu]
 ### Codespeed settings
 The main config file is `settings.py`. There you configure everything related
 to your set up.
+
+### Home page trend
+`HOME_GEOMEAN_SERIES` in `settings.py` lists the executable/environment pairs
+plotted on the home page as a trend of the geometric mean of all benchmarks
+over the last 30 days. Each line is normalised to its first run in the window,
+so 0.95 reads as "5% faster than at the start of the window". The view lives
+in `speed_python/views.py`, the chart in `static/js/home_geomean.js`, and the
+tests run with `python manage.py test speed_python`.

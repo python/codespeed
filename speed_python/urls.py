@@ -9,8 +9,12 @@ from django.contrib import admin
 
 admin.autodiscover()
 
+from . import views
+
 urlpatterns = [
     re_path(r'^admin/', admin.site.urls),
+    re_path(r'^home/geomean/json/$', views.gethomegeomeandata,
+            name='gethomegeomeandata'),
     re_path(r'^', include('codespeed.urls')),
 ]
 
