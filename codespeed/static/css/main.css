@@ -97,15 +97,12 @@ ul#links {
 }
 ul#links li { margin-left: 0.25em; }
 ul#links li a:link, ul#links li a:visited {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4em;
+    display: inline-block;
     padding: 0.35em 0.75em;
     color: var(--text-muted);
     border-radius: var(--radius-sm);
     text-decoration: none;
 }
-ul#links li a svg { width: 1.05em; height: 1.05em; overflow: visible; stroke: currentColor; stroke-width: 0.6; stroke-linejoin: round; }
 ul#links li a:hover, ul#links li a:focus {
     color: var(--text);
     background-color: var(--surface-alt);
