@@ -3,6 +3,12 @@
 
 {% block title %}Python Speed Center{% endblock %}
 
+{% block favicon %}
+  <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}">
+{% endblock favicon %}
+
+{# The logo carries the site name, so the text title is left empty #}
 {% block logo %}
-  <img src="{% static 'images/python-logo.svg' %}" height="40" alt="Python"/>
+  <img src="{% static 'images/speed-center-logo.svg' %}" height="40" alt="Python Speed Center"/>
 {% endblock logo %}
+{% block page_title %}{% endblock page_title %}
