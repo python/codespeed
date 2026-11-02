@@ -71,11 +71,12 @@ div#title {
     align-items: center;
     gap: 0.6em;
     min-height: 56px;
-    margin: 0 calc(-1 * var(--gap)) 1.2em;
+    margin: var(--gap) 0 1.2em;
     padding: 0.4em var(--gap);
     background-color: var(--surface);
-    border-bottom: 1px solid var(--border);
-    border-radius: 0 0 var(--radius) var(--radius);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
 }
 div#title a { display: inline-flex; align-items: center; }
 div#title img { display: block; height: 40px; padding: 0; margin: 0; }
@@ -151,8 +152,18 @@ div.about_content,
     box-shadow: var(--shadow);
 }
 
-/* Home page */
-div#presentation { text-align: center; }
+/* Home page: a centred column with three menu boxes in a row and the
+   results below them at the same width */
+div#presentation {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--gap);
+    text-align: center;
+}
+div#presentation > a { display: flex; }
+div#presentation div#reports, div#presentation div#historical { grid-column: 1 / -1; }
 div#presentation h2, div#presentation h4 { margin-top: 0.2em; margin-bottom: 0.2em; }
 
 div#presentation > a { text-decoration: none; color: inherit; }
@@ -162,9 +173,9 @@ div#presentation div {
     vertical-align: top;
 }
 div#presentation div.menubox {
-    width: 290px;
-    min-height: 11em;
-    margin: 0.6em;
+    flex: 1;
+    display: block;
+    margin: 0;
     padding: 1em 1em 0.8em;
     color: var(--text);
     text-align: center;
@@ -186,7 +197,7 @@ div#presentation div.menubox p { color: var(--text-muted); }
 
 /* The three icons differ in size (98 to 147px wide); scale them to one height */
 div#presentation div.menubox p {
-    min-height: 5.5em;
+    min-height: 4.6em;
     margin: 0.6em 0 0;
     padding-left: 122px;
     text-align: left;
@@ -198,7 +209,6 @@ div#presentation div#changes p { background-image: url(../images/changes.png); }
 div#presentation div#timeline p { background-image: url(../images/timeline.png); }
 div#presentation div#comparison p { background-image: url(../images/comparison.png); }
 
-div#presentation div#reports { margin-top: 1em; }
 
 /* Sidebar and content columns */
 div#sidebar { width: var(--sidebar-width); float: left; }
@@ -333,6 +343,8 @@ table.reports caption a { color: var(--text); }
 table.reports caption a img { border: 0; vertical-align: middle; height: 14px; margin-bottom: 1px; }
 table.reports td { padding: 0.45em 0.6em; border-top: 1px solid var(--border); }
 table.reports tr:first-child td { border-top: 0; }
+/* Only the commit column wraps; keep the executable and summary on one line */
+table.reports td:not(:first-child) { white-space: nowrap; }
 table.reports tr.status-none td.summary { opacity: 0.5; }
 
 table.tablesorter { margin-right: 0.8em; margin-bottom: 0.8em; }
@@ -562,6 +574,7 @@ div.footer a:hover { color: var(--accent); text-decoration: underline; }
     div#title img { height: 32px; }
     div#title h2 { font-size: 1em; }
     div#nav ul { padding-left: 0; }
+    div#presentation { grid-template-columns: 1fr; }
     div#plot { height: 400px; }
     div.miniplot { height: 100px; }
     div.compplot { height: 400px; }
@@ -571,7 +584,6 @@ div.footer a:hover { color: var(--accent); text-decoration: underline; }
     div#sidebar { float: none; width: auto; display: flex; flex-wrap: wrap; gap: 0.6em; }
     div#sidebar .sidebox { flex: 1 1 14em; }
     div#configbar, div#content, div.about_content { margin-left: 0; }
-    div#presentation div.menubox { width: 100%; margin: 0.4em 0; }
     div#historical-plot, div#baseline-comparison-plot { width: 100%; }
 }
 

@@ -5,7 +5,7 @@
 {% endblock navigation %}
 
 {% block body %}
-<div id="presentation" class="clearfix">
+<div id="presentation">
   <a href="{% url "changes" %}">
     <div id="changes" class="menubox">
       <h2>Changes</h2>
@@ -24,7 +24,6 @@
       <p>Compare different executables and revisions</p>
     </div>
   </a>
-  <br />
   <div id="reports"></div>
   {% if show_historical %}
   <div id="historical">

@@ -130,7 +130,7 @@ class Revision(models.Model):
         Branch, on_delete=models.CASCADE, related_name="revisions")
 
     def get_short_commitid(self):
-        return self.commitid[:10]
+        return self.commitid[:12]
 
     def get_browsing_url(self):
         return self.branch.project.commit_browsing_url.format(**self.__dict__)
@@ -139,10 +139,11 @@ class Revision(models.Model):
         if self.date is None:
             date = None
         else:
-            date = self.date.isoformat(sep=" ")
-        string = " - ".join(filter(None, (date, self.commitid, self.tag)))
+            date = self.date.strftime("%Y-%m-%d %H:%M")
+        string = " - ".join(
+            filter(None, (date, self.get_short_commitid(), self.tag)))
         if self.branch.name != self.branch.project.default_branch:
-            string += " - " + self.branch.name
+            string += " (%s)" % self.branch.name
         return string
 
     class Meta:
