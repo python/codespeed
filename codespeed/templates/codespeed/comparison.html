@@ -18,13 +18,12 @@
 <div class="sidebox">
   <div class="boxhead"><h2>Environments</h2></div>
   <div class="boxbody">
-  <ul><a href="#" class="togglefold">Environments</a> <span class="checklinks">(<a href="#" class="checkall">All</a>, <a href="#" class="uncheckall">None</a>)</span>
-    {% for env in enviros %}
+    <ul>{% for env in enviros %}
       <li title="{{ env.os }}, {{ env.cpu }}">
-        <input id="env_{{ env.id }}" type="checkbox" name="environments" value="{{ env.id }}"{% if env in checkedenviros %} checked{% endif %} />
+        <input id="env_{{ env.id }}" type="checkbox" name="environments" value="{{ env.id }}" />
         <label for="env_{{ env.id }}">{{ env }}</label>
       </li>{% endfor %}
-  </ul>
+    </ul>
   </div>
 </div>
 <div id="executable" class="sidebox">
@@ -34,7 +33,11 @@
     <ul><a href="#" class="togglefold">{{ proj }}</a> <span class="checklinks">(<a href="#" class="checkall">All</a>, <a href="#" class="uncheckall">None</a>)</span>
     {% for exe in executable %}
       <li title="{{ exe.executable }} - {{ exe.revision }}">
-        <input id="exe_{{ exe.key }}" type="checkbox" name="executables" value="{{ exe.key }}"{% if exe.key in checkedexecutables %} checked{% endif %} />
+        {% if exe.key in checkedexecutables %}
+            <input id="exe_{{ exe.key }}" type="checkbox" name="executables" value="{{ exe.key }}" checked />
+        {% else %}
+            <input id="exe_{{ exe.key }}" type="checkbox" name="executables" value="{{ exe.key }}" />
+        {% endif %}
         <label for="exe_{{ exe.key }}">{{ exe.name }}</label><div class="seriescolor"></div>
       </li>{% endfor %}
     </ul>{% endfor %}
@@ -48,9 +51,9 @@
     {% for bench in benchlist|dictsort:"name" %}
     <li title="{{ bench.description }}">
       {% if bench in checkedbenchmarks %}
-        <input id="benchmark_{{ bench.id }}" type="checkbox" name="benchmarks" value="{{ bench.id }}" checked />
+        <input id="benchmark_{{ bench.id }}" type="checkbox" name="benchmarks" value="{{ bench.id }}" data-source="{{ bench.source }}" checked />
       {% else %}
-        <input id="benchmark_{{ bench.id }}" type="checkbox" name="benchmarks" value="{{ bench.id }}" />
+        <input id="benchmark_{{ bench.id }}" type="checkbox" name="benchmarks" value="{{ bench.id }}" data-source="{{ bench.source }}" />
       {% endif %}
       <label for="benchmark_{{ bench.id }}">{{ bench }}</label>
     </li>{% endfor %}
@@ -78,6 +81,7 @@
   <a id="exportcsv" href="#"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/></svg>Export CSV</a>
   {% include "codespeed/permalink.html" %}
 </div>
+<div id="graph-title" style="text-align:center; padding:8px 0; font-size:15px;"></div>
 <div id="content" class="clearfix">
 <div id="plotwrapper"></div>
 </div>
@@ -89,6 +93,10 @@
 <script type="text/javascript" src="{% static 'js/comparison.js' %}"></script>
 
 <script type="text/javascript">
+  var checkboxes = document.getElementsByTagName('environments');
+  for (c in checkboxes) {
+    c.checked = false;
+  }
   $(function() {
     Comparison.init({
       chart_type: "{{ selectedchart }}",

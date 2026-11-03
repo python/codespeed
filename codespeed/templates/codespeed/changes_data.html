@@ -23,7 +23,7 @@
     <td>{% if rev.get_browsing_url %}<a href="{{ rev.get_browsing_url }}">{{ rev.commitid }}</a>{% else %}{{ rev.commitid }}{% endif %}</td>
   </tr>
   <tr class="date"><th class="infofirst">Date</td><td>{{ rev.date }}</td></tr>
-  {% if rev.branch.project.repo_type != "N" %}
+  {% if rev.branch.project.repo_type  != "N" %}
     <tr class="repo-path"><th class="infofirst">Repo</th><td>{{ rev.branch.project.repo_path }}</td></tr>
   {% endif %}
 </tbody>

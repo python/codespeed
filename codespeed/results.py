@@ -2,15 +2,18 @@
 from __future__ import absolute_import
 
 import logging
+from datetime import datetime
 
 from django.core.exceptions import ValidationError
-from django.utils import timezone
 
 from .models import (Environment, Project, Branch, Benchmark, Executable,
                      Revision, Result, Report)
 from . import commits
 
 logger = logging.getLogger(__name__)
+
+# failed runs are recorded with a huge value; anything this big is bogus
+SENTINEL_THRESHOLD = 1000000
 
 
 def validate_result(item):
@@ -38,6 +41,20 @@ def validate_result(item):
         elif key in item and item[key] == "":
             return 'Value for key "' + key + '" empty in request', error
 
+    # 'source' is optional: uploaders that predate it (pyperformance on
+    # speed.python.org) get the 'legacy' default.
+    if 'source' in item and item['source'] not in dict(Benchmark.S_TYPES):
+        return 'Invalid source "%s"' % item['source'], error
+
+    try:
+        result_value = float(item['result_value'])
+    except (TypeError, ValueError):
+        return 'Value for key "result_value" is not a number', error
+    if result_value >= SENTINEL_THRESHOLD:
+        return ('Result value %s rejected: at or above the failed-run '
+                'sentinel threshold (%s)' % (
+                    item['result_value'], SENTINEL_THRESHOLD), error)
+
     # Check that the Environment exists
     try:
         e = Environment.objects.get(name=item['environment'])
@@ -58,7 +75,8 @@ def save_result(data, update_repo=True):
     p, created = Project.objects.get_or_create(name=data["project"])
     branch, created = Branch.objects.get_or_create(name=data["branch"],
                                                    project=p)
-    b, created = Benchmark.objects.get_or_create(name=data["benchmark"])
+    b, created = Benchmark.objects.get_or_create(
+        name=data["benchmark"], source=data.get("source", "legacy"))
 
     if created:
         if "description" in data:
@@ -72,15 +90,26 @@ def save_result(data, update_repo=True):
         b.full_clean()
         b.save()
 
-    commit_id = data['commitid']
     try:
-        rev = branch.revisions.get(commitid=commit_id)
+        rev = branch.revisions.get(commitid=data['commitid'].split(":")[-1])
     except Revision.DoesNotExist:
+        commitid = data['commitid'].split(':')[-1]
+        conflict = Revision.objects.filter(
+            commitid=commitid, branch__project=p
+        ).exclude(branch=branch).first()
+        if conflict:
+            return (
+                "Revision %s already exists on branch '%s'; "
+                "refusing to add it to branch '%s'" % (
+                    commitid, conflict.branch.name, data['branch'])
+            ), True
         rev_date = data.get("revision_date")
         # "None" (as string) can happen when we urlencode the POST data
         if not rev_date or rev_date in ["", "None"]:
-            rev_date = commits.get_commit_date(p, commit_id)
-        rev = Revision(branch=branch, project=p, commitid=commit_id,
+            rev_date = datetime.today()
+        # Only take the hash of a mercurial nnn:xxxhash commitid
+        rev = Revision(branch=branch, project=p,
+                       commitid=commitid,
                        date=rev_date)
         try:
             rev.full_clean()
@@ -119,13 +148,14 @@ def save_result(data, update_repo=True):
     elif rev.date:
         r.date = rev.date
     else:
-        r.date = timezone.now()
+        r.date = datetime.now()
 
     r.std_dev = data.get('std_dev')
     r.val_min = data.get('min')
     r.val_max = data.get('max')
     r.q1 = data.get('q1')
     r.q3 = data.get('q3')
+    r.suite_version = data.get('suite_version', '')
 
     r.full_clean()
     r.save()

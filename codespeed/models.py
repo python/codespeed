@@ -147,7 +147,7 @@ class Revision(models.Model):
             date = self.date.strftime("%Y-%m-%d %H:%M")
         string = " - ".join(
             filter(None, (date, self.get_short_commitid(), self.tag)))
-        if self.branch.name:
+        if self.branch.name != self.branch.project.default_branch:
             string += " (%s)" % self.branch.name
         return string
 
@@ -410,37 +410,51 @@ class Report(models.Model):
         # If the trend is the default and a forced save is not required
         # just return the cached changes table
         if not force_save and trend_depth == default_trend:
-            return self._get_tablecache()
+            cached = self._get_tablecache()
+            if self._tablecache_is_stale(cached):
+                # Tables cached before Benchmark.source existed lack the
+                # per-row source the changes template groups by; rebuild
+                # and persist them once.
+                self.save()
+                cached = self._get_tablecache()
+            return cached
         # Otherwise generate a new changes table
         # Get latest revisions for this branch (which also sets the project)
-        lastrevisions = self.get_last_revisions(trend_depth)
+        lastrevisions = list(self.get_last_revisions(trend_depth))
         if not lastrevisions:
             return []
 
-        change_list = []
+        changerevision = None
         pastrevisions = []
         if len(lastrevisions) > 1:
             changerevision = lastrevisions[1]
-            change_list = Result.objects.filter(
-                revision=changerevision
-            ).filter(
-                environment=self.environment
-            ).filter(
-                executable=self.executable
-            )
             pastrevisions = lastrevisions[trend_depth - 2:trend_depth + 1]
 
-        result_list = Result.objects.filter(
-            revision=lastrevisions[0]
-        ).filter(
-            environment=self.environment
-        ).filter(
-            executable=self.executable
-        )
+        # Bulk fetch all results needed across current, change, and past revisions
+        relevant_revs = [lastrevisions[0]]
+        if changerevision:
+            relevant_revs.append(changerevision)
+        relevant_revs.extend(pastrevisions)
+        results_map = {
+            (r.revision_id, r.benchmark_id): r
+            for r in Result.objects.filter(
+                revision__in=relevant_revs,
+                environment=self.environment,
+                executable=self.executable,
+            )
+        }
+
+        # Fetch and group all benchmarks in one query, preserving DB order
+        benchmarks_by_units = {}
+        for bench in Benchmark.objects.all():
+            benchmarks_by_units.setdefault(bench.units_title, []).append(bench)
+
+        current_rev_id = lastrevisions[0].pk
+        change_rev_id = changerevision.pk if changerevision else None
+        past_rev_ids = [rev.pk for rev in pastrevisions]
 
         tablelist = []
-        for units_title in Benchmark.objects.all().values_list(
-                'units_title', flat=True).distinct():
+        for units_title, bench_group in benchmarks_by_units.items():
             currentlist = []
             units = ""
             hasmin = False
@@ -448,14 +462,13 @@ class Report(models.Model):
             has_stddev = False
             smallest = 1000
             totals = {'change': [], 'trend': []}
-            for bench in Benchmark.objects.filter(units_title=units_title):
+            for bench in bench_group:
                 units = bench.units
                 lessisbetter = bench.lessisbetter
-                resultquery = result_list.filter(benchmark=bench)
-                if not len(resultquery):
-                    continue
 
-                resobj = resultquery.filter(benchmark=bench)[0]
+                resobj = results_map.get((current_rev_id, bench.pk))
+                if resobj is None:
+                    continue
 
                 std_dev = resobj.std_dev
                 if std_dev is not None:
@@ -478,13 +491,13 @@ class Report(models.Model):
                 # Calculate percentage change relative to previous result
                 result = max(resobj.value, 0)
                 change = "-"
-                if len(change_list):
-                    c = change_list.filter(benchmark=bench)
-                    if c.count() and result is not None:
-                        if c[0].value != 0:
-                            change = (result - c[0].value) * 100 / c[0].value
-                            totals['change'].append(result / c[0].value)
-                        elif c[0].value == 0:
+                if change_rev_id is not None:
+                    c = results_map.get((change_rev_id, bench.pk))
+                    if c is not None:
+                        if c.value != 0:
+                            change = (result - c.value) * 100 / c.value
+                            totals['change'].append(result / c.value)
+                        elif c.value == 0:
                             if result == 0:
                                 # 0/0 = 1, in our world
                                 change = 0
@@ -493,27 +506,16 @@ class Report(models.Model):
                                 # n/0 = ∞
                                 change = float("inf")
                                 totals['change'].append(float("inf"))
-                        else:
-                            # no previous result, no change available
-                            pass
 
                 # Calculate trend:
                 # percentage change relative to average of 3 previous results
-                # Calculate past average
                 result_sum = 0
                 num_past_results = 0
-                if len(pastrevisions):
-                    for rev in pastrevisions:
-                        past_result = Result.objects.filter(
-                            revision=rev
-                        ).filter(
-                            environment=self.environment
-                        ).filter(
-                            executable=self.executable
-                        ).filter(benchmark=bench)
-                        if past_result.count():
-                            result_sum += past_result[0].value
-                            num_past_results += 1
+                for rev_id in past_rev_ids:
+                    past_r = results_map.get((rev_id, bench.pk))
+                    if past_r is not None:
+                        result_sum += past_r.value
+                        num_past_results += 1
                 trend = "-"
                 if result_sum:
                     average = result_sum / num_past_results
@@ -527,6 +529,7 @@ class Report(models.Model):
 
                 currentlist.append({
                     'bench_name': bench.name,
+                    'bench_source': bench.source,
                     'bench_description': bench.description,
                     'result': result,
                     'std_dev': std_dev,
@@ -588,3 +591,8 @@ class Report(models.Model):
         if self._tablecache == '':
             return {}
         return json.loads(self._tablecache)
+
+    @staticmethod
+    def _tablecache_is_stale(cached):
+        return any('bench_source' not in row
+                   for units in cached for row in units.get('rows', []))

@@ -81,11 +81,12 @@
         Changes.init({
             project: "{{ defaultexecutable.project }}",
             executable: "{{ defaultexecutable.id }}",
-            environment: "{{ defaultenvironment.id }}",
+            environment: "{{ defaultenvironment.0.id }}",
             revision: "{{ selectedrevision.commitid }}",
             trend: "{{ defaulttrend }}",
             projectmatrix: eval({{ projectmatrix|safe }}),
-            revisionlists: eval({{ revisionlists|safe }})
+            revisionlists: eval({{ revisionlists|safe }}),
+            envhasresults: eval({{ env_has_results|safe }})
         });
     });
 </script>

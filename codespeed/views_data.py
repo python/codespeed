@@ -10,6 +10,24 @@ from codespeed.models import (
     Environment, Benchmark, Result)
 
 
+def parse_benchmark_ident(ben):
+    """Split a '<name>.<source>' (or bare '<name>') into (name, source).
+
+    If the suffix isn't a known source (e.g. a bare name that itself
+    contains a dot, like 'base16_large.pyperf'), look up the source by
+    name: if it uniquely identifies a benchmark, use that source, else
+    fall back to 'legacy'.
+    """
+    name, _, suffix = ben.rpartition('.')
+    if name and suffix in dict(Benchmark.S_TYPES):
+        return name, suffix
+    sources = list(
+        Benchmark.objects.filter(name=ben).values_list('source', flat=True))
+    if len(sources) == 1:
+        return ben, sources[0]
+    return ben, 'legacy'
+
+
 def get_default_environment(enviros, data, multi=False):
     """Returns the default environment. Preference level is:
         * Present in URL parameters (permalinks)
@@ -21,15 +39,14 @@ def get_default_environment(enviros, data, multi=False):
     # Use permalink values
     if 'env' in data:
         for env_value in data['env'].split(","):
+            try:
+                env_id = int(env_value)
+            except ValueError:
+                continue
             for env in enviros:
-                try:
-                    env_id = int(env_value)
-                except ValueError:
-                    # Not an int
-                    continue
-                for env in enviros:
-                    if env_id == env.id:
-                        defaultenviros.append(env)
+                if env_id == env.id:
+                    defaultenviros.append(env)
+                    break
             if not multi:
                 break
     # Use settings.py value
@@ -46,7 +63,7 @@ def get_default_environment(enviros, data, multi=False):
     if multi:
         return defaultenviros
     else:
-        return defaultenviros[0]
+        return [defaultenviros[0],]
 
 
 def getbaselineexecutables(include_tags=None):
@@ -75,7 +92,7 @@ def getbaselineexecutables(include_tags=None):
         for exe in [e for e in executables if e.project == rev.branch.project]:
             exestring = get_sanitized_executable_name_for_timeline_view(exe)
             name = exestring + " " + rev.tag
-            key = str(exe.id) + "+" + str(rev.id)
+            key = str(exe.id) + ":" + str(rev.id)
             baseline.append({
                 'key': key,
                 'executable': exe,
@@ -83,15 +100,16 @@ def getbaselineexecutables(include_tags=None):
                 'name': name,
             })
     # move default to first place
-    if hasattr(settings, 'DEF_BASELINE') and settings.DEF_BASELINE is not None:
+    if hasattr(settings, 'DEF_BASELINES') and settings.DEF_BASELINES is not None:
         try:
-            exename = settings.DEF_BASELINE['executable']
-            commitid = settings.DEF_BASELINE['revision']
+            exename = settings.DEF_BASELINES[0]['executable']
+            commitid = settings.DEF_BASELINES[0]['revision']
             for base in baseline:
                 if base['key'] == "none":
                     continue
                 if (base['executable'].name == exename and
-                        base['revision'].commitid == commitid):
+                        (base['revision'].commitid == commitid or
+                         base['revision'].tag == commitid)):
                     baseline.remove(base)
                     baseline.insert(1, base)
                     break
@@ -104,10 +122,13 @@ def getbaselineexecutables(include_tags=None):
 
 def getdefaultexecutable():
     default = None
-    if (hasattr(settings, 'DEF_EXECUTABLE') and
-            settings.DEF_EXECUTABLE is not None):
+    if (hasattr(settings, 'DEF_EXECUTABLES') and
+            settings.DEF_EXECUTABLES is not None):
         try:
-            default = Executable.objects.get(name=settings.DEF_EXECUTABLE)
+            def_name = settings.DEF_EXECUTABLES[0]['name']
+            def_project = Project.objects.get(
+                name=settings.DEF_EXECUTABLES[0]['project'])
+            default = Executable.objects.get(name=def_name, project=def_project)
         except Executable.DoesNotExist:
             pass
     if default is None:
@@ -149,7 +170,7 @@ def getcomparisonexes():
                     name = exestring + " latest"
                     if branch.name != proj.default_branch:
                         name += " in branch '" + branch.name + "'"
-                    key = str(exe.id) + "+L+" + branch.name
+                    key = str(exe.id) + ":L:" + branch.name
                     executablekeys.append(key)
                     executables.append({
                         'key': key,
@@ -167,7 +188,8 @@ def get_benchmark_results(data):
     project = Project.objects.get(name=data['proj'])
     executable = Executable.objects.get(name=data['exe'], project=project)
     branch = Branch.objects.get(name=data['branch'], project=project)
-    benchmark = Benchmark.objects.get(name=data['ben'])
+    ben_name, ben_source = parse_benchmark_ident(data['ben'])
+    benchmark = Benchmark.objects.get(name=ben_name, source=ben_source)
 
     number_of_revs = int(data.get('revs', 10))
 
@@ -250,7 +272,9 @@ def get_num_revs_and_benchmarks(data):
         benchmarks = []
         number_of_revs = int(data.get('revs', 10))
     else:
-        benchmarks = [get_object_or_404(Benchmark, name=data['ben'])]
+        ben_name, ben_source = parse_benchmark_ident(data['ben'])
+        benchmarks = [get_object_or_404(
+            Benchmark, name=ben_name, source=ben_source)]
         number_of_revs = int(data.get('revs', 10))
     return number_of_revs, benchmarks
 

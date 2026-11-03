@@ -43,7 +43,8 @@ $(function() {
 
     $('.togglefold').each(function() {
         var lis = $(this).parent().children("li");
-        var allUnchecked = lis.find("input[type='checkbox']").filter(':checked').length === 0;
+        // count radios too (timeline groups use radio inputs, comparison checkboxes)
+        var allUnchecked = lis.find("input").filter(':checked').length === 0;
         if (allUnchecked) {
             lis.hide();
             $(this).addClass('folded');

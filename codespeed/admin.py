@@ -39,6 +39,15 @@ class ProjectAdmin(admin.ModelAdmin):
 class BranchAdmin(admin.ModelAdmin):
     list_display = ('name', 'project', 'display_on_comparison_page')
     list_filter = ('project',)
+    actions = ['enable_comparison_page', 'disable_comparison_page']
+
+    @admin.action(description='Display selected branches on comparison page')
+    def enable_comparison_page(self, request, queryset):
+        queryset.update(display_on_comparison_page=True)
+
+    @admin.action(description='Hide selected branches from comparison page')
+    def disable_comparison_page(self, request, queryset):
+        queryset.update(display_on_comparison_page=False)
 
 
 @admin.register(Revision)
@@ -46,6 +55,7 @@ class RevisionAdmin(admin.ModelAdmin):
     list_display = ('commitid', 'branch', 'tag', 'date')
     list_filter = ('branch__project', 'branch', 'tag', 'date')
     search_fields = ('commitid', 'tag')
+    raw_id_fields = ('branch',)
 
 
 @admin.register(Executable)
@@ -75,9 +85,16 @@ class EnvironmentAdmin(admin.ModelAdmin):
 
 @admin.register(Result)
 class ResultAdmin(admin.ModelAdmin):
-    list_display = ('revision', 'benchmark', 'executable', 'environment',
-                    'value', 'date')
-    list_filter = ('environment', 'executable', 'date', 'benchmark')
+    list_display = ('revision', 'benchmark', 'source', 'executable',
+                    'environment', 'value', 'date')
+    list_filter = ('environment', 'executable', 'date', 'benchmark__source',
+                   'benchmark')
+    list_select_related = ('revision', 'benchmark', 'executable', 'environment')
+    raw_id_fields = ('revision', 'benchmark', 'executable', 'environment')
+
+    @admin.display(ordering='benchmark__source', description='Source')
+    def source(self, obj):
+        return obj.benchmark.source
 
 
 def recalculate_report(modeladmin, request, queryset):

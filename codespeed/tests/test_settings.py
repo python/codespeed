@@ -12,7 +12,7 @@ class TestCodespeedSettings(TestCase):
         self.cs_setting_keys = [key for key in dir(default_settings) if key.isupper()]
 
     def test_website_name(self):
-        """See if WEBSITENAME is set
+        """See if WEBSITE_NAME is set
         """
         self.assertTrue(default_settings.WEBSITE_NAME)
         self.assertEqual(default_settings.WEBSITE_NAME, 'MySpeedSite',

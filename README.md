@@ -127,7 +127,7 @@ the appropriate block:
             My Project's Speed Center
         {% endblock %}
 
-* Replacing logo.png: Place your logo in `sample_project/static/images/logo.png`
+* Replacing logo.svg: Place your logo in `sample_project/static/images/logo.svg`
 * Logo with custom filename: Place your logo in `sample_project/static/images/` and add a block like
   this to `base_site.html`:
 

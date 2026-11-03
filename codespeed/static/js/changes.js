@@ -3,7 +3,7 @@ var Changes = (function(window){
 // Localize globals
 var TIMELINE_URL = window.TIMELINE_URL, getLoadText = window.getLoadText;
 
-var currentproject, changethres, trendthres, projectmatrix, revisionboxes = {};
+var currentproject, changethres, trendthres, projectmatrix, revisionboxes = {}, revisiondata = {}, envhasresults = {};
 
 function getConfiguration(revision) {
     return {
@@ -82,6 +82,22 @@ function updateTable() {
     });
 }
 
+function updateRevisionMarkers(env_id) {
+    var has = {};
+    $.each(envhasresults[env_id] || [], function(_, commitid) { has[commitid] = true; });
+    var current = $("#revision").val();
+    var options = "";
+    $.each(revisiondata[currentproject] || [], function(_, r) {
+        var marker = has[r[1]] ? '● ' : '○ ';
+        options += "<option value='" + r[1] + "'>" + marker + r[0] + "</option>";
+    });
+    $("#revision").html(options);
+    $("#revision").val(current);
+    if (!$("#revision").val()) {
+        $("#revision").prop('selectedIndex', 0);
+    }
+}
+
 function refreshContent() {
     refreshContentTable($("#revision option:selected").val());
 }
@@ -110,8 +126,19 @@ function changeRevisions() {
         selected_project = projectmatrix[executable];
 
     if (selected_project !== currentproject) {
-        $("#revision").html(revisionboxes[selected_project]);
+        var oldRevs = revisiondata[currentproject] || [];
+        var oldEntry = oldRevs.find(function(r) { return r[1] === $("#revision").val(); });
+        var oldDate = oldEntry ? new Date(oldEntry[0].slice(0, 19)) : null;
         currentproject = selected_project;
+        updateRevisionMarkers($("input[name='environment']:checked").val());
+        if (oldDate) {
+            var newRevs = revisiondata[currentproject] || [];
+            var best = newRevs.reduce(function(bi, r, i) {
+                return Math.abs(new Date(r[0].slice(0, 19)) - oldDate) <
+                       Math.abs(new Date(newRevs[bi][0].slice(0, 19)) - oldDate) ? i : bi;
+            }, 0);
+            $("#revision").prop('selectedIndex', best);
+        }
 
         //Give visual cue that the select box has changed
         var bgc = $("#revision").parent().parent().css("backgroundColor");
@@ -132,8 +159,10 @@ function config(c) {
 function init(defaults) {
     currentproject = defaults.project;
     projectmatrix = defaults.projectmatrix;
+    envhasresults = defaults.envhasresults || {};
 
     $.each(defaults.revisionlists, function(project, revs) {
+        revisiondata[project] = revs;
         var options = "";
         $.each(revs, function(index, r) {
             options += "<option value='" + r[1] + "'>" + r[0] + "</option>";
@@ -148,10 +177,14 @@ function init(defaults) {
     $("input[name='executable']").change(changeRevisions);
 
     $("#env" + defaults.environment).prop('checked', true);
-    $("input[name='environment']").change(refreshContent);
+    $("input[name='environment']").change(function() {
+        updateRevisionMarkers($("input[name='environment']:checked").val());
+        refreshContent();
+    });
 
     $("#revision").html(revisionboxes[defaults.project]);
     $("#revision").val(defaults.revision);
+    updateRevisionMarkers(defaults.environment);
     $("#revision").change(refreshContent);
 
     $("#permalink").click(function() {

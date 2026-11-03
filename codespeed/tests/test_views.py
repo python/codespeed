@@ -30,6 +30,7 @@ class TestAddResult(TestCase):
             'benchmark': 'float',
             'environment': 'Dual Core',
             'result_value': 456,
+            'source': 'legacy',
         }
 
     def test_add_correct_result(self):
@@ -76,7 +77,7 @@ class TestAddResult(TestCase):
         branch = Branch.objects.get(name='default', project=p)
         r = Revision.objects.get(commitid='23', branch=branch)
 
-        # Posted datetimes are naive and interpreted in the current time zone
+        # Tweak the resolution down to avoid failing over very slight differences:
         self.assertEqual(r.date, timezone.make_aware(revision_date))
 
         i = Executable.objects.get(name='myexe O3 64bits')
@@ -105,6 +106,8 @@ class TestAddResult(TestCase):
     def test_empty_argument(self):
         """Should respond 400 when a POST request has an empty argument"""
         for key in self.data:
+            if key == 'source':  # optional, defaults to 'legacy'
+                continue
             backup = self.data[key]
             self.data[key] = ""
             response = self.client.post(self.path, self.data)
@@ -117,6 +120,8 @@ class TestAddResult(TestCase):
     def test_missing_argument(self):
         """Should respond 400 when a POST request is missing an argument"""
         for key in list(self.data):
+            if key == 'source':  # optional, defaults to 'legacy'
+                continue
             backup = self.data[key]
             del self.data[key]
             response = self.client.post(self.path, self.data)
@@ -148,8 +153,7 @@ class TestAddResult(TestCase):
     def test_submit_data_with_none_timestamp(self):
         """Should add a default revision date when timestamp is None"""
         modified_data = copy.deepcopy(self.data)
-        # Older clients urlencoded None as the string "None"
-        modified_data['revision_date'] = "None"
+        modified_data['revision_date'] = 'None'
         response = self.client.post(self.path, modified_data)
         self.assertEqual(response.status_code, 202)
 
@@ -162,6 +166,73 @@ class TestAddResult(TestCase):
         self.assertEqual(response.status_code, 202)
         self.assertEqual(
             response.content.decode(), "Result data saved successfully")
+
+    def test_suite_version_is_saved(self):
+        """suite_version in the payload should be stored on the Result"""
+        modified_data = copy.deepcopy(self.data)
+        modified_data['suite_version'] = '2.3.1'
+        self.client.post(self.path, modified_data)
+        res = Result.objects.get(
+            revision__commitid='23',
+            benchmark__name='float',
+        )
+        self.assertEqual(res.suite_version, '2.3.1')
+
+    def test_suite_version_defaults_to_empty(self):
+        """Omitting suite_version should store an empty string"""
+        self.client.post(self.path, self.data)
+        res = Result.objects.get(
+            revision__commitid='23',
+            benchmark__name='float',
+        )
+        self.assertEqual(res.suite_version, '')
+
+    def test_source_set_on_new_benchmark(self):
+        """source in the payload should be set on an auto-created Benchmark"""
+        modified_data = copy.deepcopy(self.data)
+        modified_data['benchmark'] = 'newbench'
+        modified_data['source'] = 'pyperformance'
+        self.client.post(self.path, modified_data)
+        b = Benchmark.objects.get(name='newbench')
+        self.assertEqual(b.source, 'pyperformance')
+
+    def test_source_defaults_to_legacy(self):
+        """A payload without a source creates a 'legacy' Benchmark"""
+        modified_data = copy.deepcopy(self.data)
+        del modified_data['source']
+        response = self.client.post(self.path, modified_data)
+        self.assertEqual(response.status_code, 202)
+        b = Benchmark.objects.get(name='float')
+        self.assertEqual(b.source, 'legacy')
+
+    def test_same_name_different_source_are_distinct(self):
+        """The same name in a different suite is a separate Benchmark"""
+        self.client.post(self.path, self.data)
+        modified_data = copy.deepcopy(self.data)
+        modified_data['source'] = 'pyperformance'
+        self.client.post(self.path, modified_data)
+
+        legacy = Benchmark.objects.get(name='float', source='legacy')
+        pyperf = Benchmark.objects.get(name='float', source='pyperformance')
+        self.assertNotEqual(legacy.pk, pyperf.pk)
+        self.assertEqual(legacy.results.count(), 1)
+        self.assertEqual(pyperf.results.count(), 1)
+
+    def test_invalid_source_rejected(self):
+        """An unknown source is rejected instead of creating a bogus row"""
+        modified_data = copy.deepcopy(self.data)
+        modified_data['source'] = 'bogus'
+        response = self.client.post(self.path, modified_data)
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Benchmark.objects.filter(name='float').exists())
+
+    def test_sentinel_value_rejected(self):
+        """A failed-run sentinel value is rejected"""
+        modified_data = copy.deepcopy(self.data)
+        modified_data['result_value'] = 1000000
+        response = self.client.post(self.path, modified_data)
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Result.objects.filter(benchmark__name='float').exists())
 
 
 @override_settings(ALLOW_ANONYMOUS_POST=True)
@@ -183,28 +254,32 @@ class TestAddJSONResults(TestCase):
              'executable': 'pypy-c',
              'benchmark': 'Richards',
              'environment': 'bigdog',
-             'result_value': 456},
+             'result_value': 456,
+             'source': 'legacy'},
             {'commitid': '456',
              'project': 'pypy',
              'branch': 'default',
              'executable': 'pypy-c',
              'benchmark': 'Richards',
              'environment': 'bigdog',
-             'result_value': 457},
+             'result_value': 457,
+             'source': 'legacy'},
             {'commitid': '456',
              'project': 'pypy',
              'branch': 'default',
              'executable': 'pypy-c',
              'benchmark': 'Richards2',
              'environment': 'bigdog',
-             'result_value': 34},
+             'result_value': 34,
+             'source': 'legacy'},
             {'commitid': '789',
              'project': 'pypy',
              'branch': 'default',
              'executable': 'pypy-c',
              'benchmark': 'Richards',
              'environment': 'bigdog',
-             'result_value': 458},
+             'result_value': 458,
+             'source': 'legacy'},
         ]
 
     def test_get_returns_405(self):
@@ -281,6 +356,8 @@ class TestAddJSONResults(TestCase):
         '''Should return 400 when making a request with an empty argument'''
         data = self.data[1]
         for key in data:
+            if key == 'source':  # optional, defaults to 'legacy'
+                continue
             backup = data[key]
             data[key] = ""
             response = self.client.post(self.path,
@@ -295,6 +372,8 @@ class TestAddJSONResults(TestCase):
         '''Should return 400 when making a request with a missing argument'''
         data = self.data[2]
         for key in list(data):
+            if key == 'source':  # optional, defaults to 'legacy'
+                continue
             backup = data[key]
             del data[key]
             response = self.client.post(self.path,
@@ -347,7 +426,7 @@ class TestTimeline(TestCase):
         path = reverse('gettimelinedata')
         data = {
             "exe": "1,2",
-            "base": "2+4",
+            "base": "2:4",
             "ben": "float",
             "env": "1",
             "revs": "2"
@@ -369,12 +448,12 @@ class TestTimeline(TestCase):
             1,
             "there should be 1 timeline for master")
         self.assertEqual(
-            len(responsedata['timelines'][0]['branches']['master']['1']),
+            len(responsedata['timelines'][0]['branches']['master']['1:1']),
             2,
             "There are 2 datapoints")
         self.assertEqual(
-            responsedata['timelines'][0]['branches']['master']['1'][1],
-            [u'2011/04/13 17:04:22 +0000', 2000.0, 1.11111, u'2', u'', u'master'])
+            responsedata['timelines'][0]['branches']['master']['1:1'][1],
+            [u'2011/04/13 17:04:22 +0000', 2000.0, 1.11111, u'2', u'', u'master', u''])
 
 
 @override_settings(ALLOW_ANONYMOUS_POST=True)
@@ -390,6 +469,7 @@ class TestReports(TestCase):
             'benchmark': 'float',
             'environment': 'Dual Core',
             'result_value': 200,
+            'source': 'legacy',
         }
         resp = self.client.post(reverse('add-result'),
                                 self.data)

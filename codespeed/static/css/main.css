@@ -304,10 +304,10 @@ a.checkall:hover, a.uncheckall:hover { color: var(--accent); }
 p.errormessage { line-height: 10em; margin-bottom: 10em; }
 
 /* Home page history section */
-div#historical { max-width: 800px; margin: 0 auto; padding-bottom: 3em; text-align: left; }
+div#historical { max-width: 800px; margin: 0 auto; padding-bottom: 3em; text-align: center; }
 div#baseline-comparison-plot { width: 750px; height: 400px; margin: 0 auto; }
 div#historical-plot { width: 600px; height: 400px; margin: 0 auto; }
-div#historical p { padding-left: 0; }
+div#historical p { margin: 0.6em 0 1em; }
 div#historical p.plot-caption { font-size: 0.9em; color: var(--text-muted); }
 
 /* Changes page layout: previous/next navigation across the top, the
@@ -589,3 +589,7 @@ div.footer a:hover { color: var(--accent); text-decoration: underline; }
     div#configbar, div#content, div.about_content { margin-left: 0; }
     div#historical-plot, div#baseline-comparison-plot { width: 100%; }
 }
+
+/* speed.pypy.org additions */
+.envlinecolor { float: right; font-size: 12px; line-height: 18px; color: #555; }
+a#exportcsv:hover { text-decoration: underline; }

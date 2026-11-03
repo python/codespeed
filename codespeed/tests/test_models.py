@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 import os
 
 from django.conf import settings
@@ -186,6 +187,12 @@ class TestReport(TestCase):
         self.assertIn('b1', rep.summary)
         self.assertEqual('red', rep.colorcode)
 
+    def test_changes_table_row_has_bench_source(self):
+        s1 = self.make_result(15)
+        rep = self.make_report(s1)
+        tablelist = rep.get_changes_table(force_save=True)
+        self.assertEqual(tablelist[0]['rows'][0]['bench_source'], 'legacy')
+
     def test_multiple_quantities(self):
         b1 = self.make_bench('b1', quantity='Space', units='bytes')
         s1 = self.make_result(1.0)
@@ -197,6 +204,23 @@ class TestReport(TestCase):
         rep = self.make_report(s2)
         self.assertRegex(rep.summary, '[sS]pace')
         self.assertEqual('red', rep.colorcode)
+
+    def test_stale_tablecache_is_rebuilt(self):
+        """Cached tables written before Benchmark.source existed are rebuilt"""
+        self.make_result(12)
+        rev = self.make_result(15)
+        report = self.make_report(rev)
+        # Simulate a cache written by the pre-'source' code
+        cached = report._get_tablecache()
+        for units in cached:
+            for row in units['rows']:
+                del row['bench_source']
+        Report.objects.filter(pk=report.pk).update(_tablecache=json.dumps(cached))
+
+        table = Report.objects.get(pk=report.pk).get_changes_table()
+        self.assertEqual(table[0]['rows'][0]['bench_source'], 'legacy')
+        self.assertIn('"bench_source"',
+                      Report.objects.get(pk=report.pk)._tablecache)
 
     def make_result(self, value, rev=None, benchmark=None):
         from uuid import uuid4

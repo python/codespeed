@@ -23,8 +23,8 @@
     <ul>
     {% for env in environments %}
       <li title="{{ env.os }}, {{ env.cpu }}">
-        <input id="env{{ env.name }}" type="radio" name="environments" value="{{ env.id }}" />
-        <label for="env{{ env.name }}">{{ env }}</label>
+        <input id="env{{ env.name }}" type="checkbox" name="environments" value="{{ env.id }}" />
+        <label for="env{{ env.name }}">{{ env }}</label><div class="envlinecolor"></div>
       </li>
     {% endfor %}
     </ul>
@@ -65,19 +65,22 @@
       <label for="b_show_none">Display none</label>
     </li>
   </ul>{% endif %}
-  <ul>{% for bench in benchmarks|dictsort:"name" %}
+  {% regroup benchmarks by get_source_display as benchmark_groups %}
+  {% for group in benchmark_groups %}
+  <ul><a href="#" class="togglefold">{{ group.grouper }}</a>
+    {% for bench in group.list|dictsort:"name" %}
     <li title="{{ bench.description }}">
-      <input id="benchmark_{{ bench.id }}" type="radio" name="benchmark" value="{{ bench.name }}" />
+      <input id="benchmark_{{ bench.id }}" type="radio" name="benchmark" value="{{ bench.ident }}" />
       <label for="benchmark_{{ bench.id }}">{{ bench }}</label>
     </li>
     {% endfor %}
-  </ul>
+  </ul>{% endfor %}
   </div>
 </div>
 </div>
 
 <div id="configbar">
-  <span class="options" title="Last {{ defaultlast }} revisions tested">
+  <span class="options">
     Show the last
     <select id="revisions">{% for rev in lastrevisions %}
       <option value="{{ rev }}">{{ rev }}</option>{% endfor %}
@@ -120,8 +123,8 @@
       baseline: "{{ defaultbaseline }}",
       executables: [{% for exe in checkedexecutables %}{{ exe.id }}, {% endfor %}],
       branches: [{% for b in branch_list %}"{{ branch }}", {% endfor %}],
-      benchmark: "{{ defaultbenchmark }}",
-      environment: "{{ defaultenvironment.id }}",
+      benchmark: "{{ defaultbenchmark_value }}",
+      environments: [{% for env in defaultenvironments %}{{ env.id }}, {% endfor %}],
       equidistant: "{{ defaultequid }}",
       quartiles: "{{ defaultquarts }}",
       extrema: "{{ defaultextr }}"

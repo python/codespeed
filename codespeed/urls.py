@@ -14,6 +14,7 @@ urlpatterns = [
 ]
 
 urlpatterns += [
+    re_path(r'^embed/comparison/$', views.embed_comparison, name='embed-comparison'),
     re_path(r'^historical/json/$', views.gethistoricaldata, name='gethistoricaldata'),
     re_path(r'^reports/$', views.reports, name='reports'),
     re_path(r'^changes/$', views.changes, name='changes'),
