@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [speed.python.org]
+    branches: [main]
   pull_request:
-    branches: [speed.python.org]
+    branches: [main]
 
 permissions:
   contents: read
@@ -37,4 +37,5 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: pip install -r requirements.txt "django==${{ matrix.django }}.*"
-      - run: python manage.py test codespeed speed_python
+      # test_commits.py skips itself when hg is not installed
+      - run: python manage.py test codespeed speed_python speed_pypy

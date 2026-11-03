@@ -1,5 +1,5 @@
 # Codespeed
-[![Tests](https://github.com/python/codespeed/actions/workflows/test.yml/badge.svg)](https://github.com/python/codespeed/actions/workflows/test.yml)
+[![Tests](https://github.com/python/codespeed/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/python/codespeed/actions/workflows/test.yml)
 [![PyPI version](https://img.shields.io/pypi/v/codespeed.svg)](https://pypi.python.org/pypi/codespeed)
 
 Codespeed is a web application to monitor and analyze the performance of your code.
@@ -54,7 +54,7 @@ modify `sample_project/settings.py` and set `DEBUG = False`.
 
 The test suite uses its own site-independent settings module:
 
-        python manage.py test codespeed speed_python --settings=codespeed.tests.settings
+        python manage.py test codespeed speed_python speed_pypy --settings=codespeed.tests.settings
 
 ## Codespeed configuration
 

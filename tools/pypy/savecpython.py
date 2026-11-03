@@ -31,6 +31,7 @@ def save(project, revision, results, options, executable, host, testing=False):
             'environment': host,
             'result_value': value,
             'result_date': current_date,
+            'source': 'legacy',
         }
         if res_type == "ComparisonResult":
             data['std_dev'] = results['std_changed']

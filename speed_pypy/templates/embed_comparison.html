@@ -1,0 +1,99 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PyPy vs CPython benchmark comparison</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: transparent; height: 100%; overflow: hidden; }
+    /* Fill the embedding iframe so the rotated benchmark labels are never
+       clipped: the host page controls the height via the iframe. */
+    #baseline-comparison-plot {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      font-family: sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div id="baseline-comparison-plot"></div>
+
+  <script type="text/javascript" src="{% static 'js/jquery-1.12.3.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'js/chart.umd.min.js' %}"></script>
+  <script type="text/javascript">
+    Chart.Tooltip.positioners.cursor = function(_items, eventPosition) {
+        return {x: eventPosition.x, y: eventPosition.y};
+    };
+
+    function renderplot(data) {
+        var wrap = document.getElementById('baseline-comparison-plot');
+        if (data === null || data.length === 0 ||
+            typeof data === 'string' || data instanceof String) {
+            wrap.innerHTML = 'Error retrieving data';
+            return;
+        }
+
+        var benchmarks = [], latestValues = [], baselineValues = [];
+        var tagged_data = [];
+        for (var i in data['tagged_revs']) { tagged_data[i] = []; }
+
+        for (var bench in data['benchmarks']) {
+            var benchname = data['benchmarks'][bench];
+            var add_to_tagged_data = true;
+            for (var i in data['tagged_revs']) {
+                var rev = data['tagged_revs'][i];
+                if (data['results'][benchname][rev] === 0) { add_to_tagged_data = false; break; }
+                tagged_data[i].push(data['results'][benchname][rev] / data['results'][benchname][data['baseline']]);
+            }
+            if (!add_to_tagged_data) { continue; }
+            var rel = data['results'][benchname]['latest'] / data['results'][benchname][data['baseline']];
+            // Drop a benchmark the latest run is missing before pushing its
+            // label, so the bars stay aligned with the x axis ticks.
+            // (!(rel > 0) also catches the NaN from a missing value.)
+            if (!(rel > 0)) { continue; }
+            benchmarks.push(benchname);
+            latestValues.push(rel);
+            baselineValues.push(1.0);
+        }
+
+        if (benchmarks.length === 0) {
+            wrap.innerHTML = 'No complete benchmark run available yet';
+            return;
+        }
+
+        var canvas1 = document.createElement('canvas');
+        wrap.appendChild(canvas1);
+        new Chart(canvas1, {
+            type: 'bar',
+            data: {
+                labels: benchmarks,
+                datasets: [
+                    {label: 'latest {{ default_exe }}', data: latestValues, backgroundColor: '#4e79a7'},
+                    {label: data['baseline'], data: baselineValues, type: 'line',
+                     borderColor: '#f28e2b', backgroundColor: 'transparent',
+                     pointRadius: 0, borderWidth: 2, fill: false}
+                ]
+            },
+            options: {
+                animation: false,
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {position: 'cursor'}
+                },
+                scales: {
+                    x: {ticks: {maxRotation: 70, minRotation: 70, autoSkip: false, font: {size: 11}}},
+                    y: {min: 0, max: 2.0, ticks: {callback: function(v) { return v.toFixed(2); }}}
+                }
+            }
+        });
+    }
+
+    $(function() {
+        $.getJSON("{% url 'gethistoricaldata' %}", renderplot);
+    });
+  </script>
+</body>
+</html>

@@ -20,6 +20,7 @@ data = {
     'benchmark': 'float',
     'environment': "Dual Core",
     'result_value': 4000,
+    'source': 'legacy',  # 'legacy' or 'pyperformance'
 }
 
 # Optional fields

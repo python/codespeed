@@ -18,7 +18,8 @@ sample_data = [
         "executable": "myexe O3 64bits",
         "benchmark": "float",
         "environment": "Dual Core",
-        "result_value": 2500.0
+        "result_value": 2500.0,
+        "source": "legacy"
     },
     {
         "commitid": "8",
@@ -27,7 +28,8 @@ sample_data = [
         "executable": "myexe O3 64bits",
         "benchmark": "int",
         "environment": "Dual Core",
-        "result_value": 1100
+        "result_value": 1100,
+        "source": "legacy"
     }
 ]
 

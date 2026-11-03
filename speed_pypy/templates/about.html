@@ -1,0 +1,49 @@
+{% extends "codespeed/base_site.html" %}
+{% block title %}{{ block.super }}: About this site{% endblock %}
+{% block body %}
+<div id="sidebar">
+</div>
+<div id="about" class="about_content clearfix">
+<h3>About this site</h3>
+<p>We have nightly benchmark runs of PyPy, together with CPython data for
+comparison. The benchmarks ran from 2016-2026 on a dedicated machine
+named <b>benchmarker</b>. Previously, we had other machines (<b>tannit</b> and
+briefly <b>speed-python</b>). The <b>benchmarker</b> machine was generously
+donated by <a href="https://baroquesoftware.com">Baroque Software</a>. Since mid-2026
+the benchmarks are running on benchmarker2, which is a <a
+href=https://www.hetzner.com/dedicated-rootserver/ax41/">Hetzner AX41-NVMe</a>
+machine donated by Hetzner. The specs are:</p>
+<ul><li>Processor: AMD Ryzen™ 5 3600 CPU with turbo disabled</li>
+<li>RAM: 64GB Micron DDR4 MHz</li>
+<li>Disk: two 512 GB NVMe SSDs in RAID 0</li>
+<li>Benchmarking pinned with cpuset partitions to CPUs3,4,5 with SMT
+(hyper-threading) disabled, other machine operations are pinned to CPUs 1,2,3
+</li>
+</ul>
+
+<h3>About the benchmarks</h3>
+<p>The benchmark code can be found <a
+href="https://foss.heptapod.net/pypy/benchmarks">here</a>.</p>
+<p>This is a benchmark suite based on Unladen Swallow, adapted for PyPy and
+runs on Python2 and Python3.<br>Also see the <a href="https://speed.python.org">
+speed.python.org</a> site.</p>
+
+<h3>About PyPy</h3>
+<p>PyPy is a very compliant implementation of the Python language.</p>
+<p>Main website: <a href="https://www.pypy.org">www.pypy.org</a></p>
+<p>Documentation: <a href="https://doc.pypy.org">doc.pypy.org</a></p>
+<p>Blog: <a href="https://www.pypy.org/blog/">www.pypy.org/blog/</a>
+
+<h3>About Codespeed</h3>
+<a href="https://github.com/tobami/codespeed">Codespeed</a> is a web application
+to monitor and analyze the performance of your code.
+<p>The source code of this website can be found on the
+<a href="https://github.com/python/codespeed/tree/speed.pypy.org"><code>speed.pypy.org</code>
+branch</a> of the Python fork of codespeed{% if commit %},
+currently at commit <a href="https://github.com/python/codespeed/commit/{{ commit }}"><code>{{ commit|slice:":12" }}</code></a>{% endif %}.</p>
+
+<h3>Contact</h3>
+<p>For problems or suggestions about this website, please file an issue in the
+<a href="https://github.com/python/codespeed">GitHub repository</a>.</p>
+</div>
+{% endblock %}

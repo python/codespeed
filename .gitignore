@@ -5,6 +5,7 @@
 *.db
 sample_project/repos/*
 speed_python/repos/*
+speed_pypy/repos/*
 speed_python/sitestatic/*
 speed_python/secret_key
 override
@@ -13,3 +14,4 @@ dist
 *.egg-info
 .venv*/
 speed_python/local_settings.py
+speed_pypy/local_settings.py

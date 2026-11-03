@@ -1,0 +1,73 @@
+{% extends "admin/index.html" %}
+{% load i18n %}
+
+{% block content %}
+<div id="content-main">
+  {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
+
+  <div class="app-datatools module">
+    <table>
+      <caption>Data tools</caption>
+      <thead class="visually-hidden">
+        <tr>
+          <th scope="col">{% trans "Action" %}</th>
+          <th scope="col"></th>
+          <th scope="col">{% trans "Link" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="model-sqlitesnapshot">
+          <th scope="row" id="datatools-sqlitesnapshot">SQLite snapshot</th>
+          <td></td>
+          <td>
+            <a id="download-db-btn" href="{% url 'admin-download-db' %}" class="changelink">Download</a>
+            <span id="download-db-status" style="display:none; margin-left:1em; color:#666; font-style:italic;"></span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<script>
+(function () {
+    var btn = document.getElementById('download-db-btn');
+    var status = document.getElementById('download-db-status');
+    if (!btn) { return; }
+
+    btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        btn.style.display = 'none';
+        status.style.display = '';
+        status.textContent = 'Generating… (0s)';
+
+        var start = Date.now();
+        var timer = setInterval(function () {
+            var sec = Math.floor((Date.now() - start) / 1000);
+            status.textContent = 'Generating… (' + sec + 's)';
+        }, 1000);
+
+        window.location.href = btn.href;
+
+        var poll = setInterval(function () {
+            var ready = document.cookie.split(';').some(function (c) {
+                return c.trim().indexOf('codespeed_download_ready=') === 0;
+            });
+            if (ready) {
+                clearInterval(timer);
+                clearInterval(poll);
+                document.cookie = 'codespeed_download_ready=; max-age=0; path=/';
+                status.style.display = 'none';
+                btn.style.display = '';
+            }
+        }, 500);
+
+        setTimeout(function () {
+            clearInterval(timer);
+            clearInterval(poll);
+            status.style.display = 'none';
+            btn.style.display = '';
+        }, 90000);
+    });
+}());
+</script>
+{% endblock %}

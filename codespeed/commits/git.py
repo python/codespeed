@@ -80,9 +80,12 @@ def getlogs(endrev, startrev):
     else:
         logfmt = '--format=format:%h%x00%H%x00%at%x00%an%x00%ae%x00%s%x00%b%x1e'
 
+    max_log_entries = getattr(settings, 'GIT_MAX_LOG_ENTRIES', 30)
+
     cmd = ["git", "log", logfmt]
 
     if endrev.commitid != startrev.commitid:
+        cmd.append("-n%d" % max_log_entries)
         cmd.append("%s...%s" % (startrev.commitid, endrev.commitid))
     else:
         cmd.append("-1")  # Only return one commit
@@ -92,8 +95,8 @@ def getlogs(endrev, startrev):
     p, stdout, stderr = execute_command(cmd, working_copy)
 
     if p.returncode != 0:
-        raise CommitLogError("%s returned %s: %s" % (
-                             " ".join(cmd), p.returncode, stderr))
+        raise CommitLogError("'%s' in '%s' returned %s: %s" % (
+                             " ".join(cmd), working_copy, p.returncode, stderr))
     logs = []
     for log in filter(None, stdout.split('\x1e')):
         (short_commit_id, commit_id, date_t, author_name, author_email,
@@ -107,7 +110,7 @@ def getlogs(endrev, startrev):
             logger.debug('Failed to get tag', exc_info=True)
 
         tag = stdout.strip() if p.returncode == 0 else ""
-        date = datetime.datetime.fromtimestamp(
+        date = datetime.datetime.utcfromtimestamp(
             int(date_t)).strftime("%Y-%m-%d %H:%M:%S")
 
         logs.append({
