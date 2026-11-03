@@ -196,7 +196,7 @@ div#presentation div.menubox h2 { font-size: 1.1em; font-weight: 600; }
 div#presentation div.menubox p { color: var(--text-muted); }
 
 /* The three icons differ in size (98 to 147px wide); scale them to one height */
-div#presentation p {
+div#presentation div.menubox p {
     min-height: 4.6em;
     margin: 0.6em 0 0;
     padding-left: 122px;
