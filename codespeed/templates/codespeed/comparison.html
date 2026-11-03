@@ -15,12 +15,13 @@
 
 {% block body %}
 <div id="sidebar">
-<div class="sidebox">
+<div id="environment" class="sidebox">
   <div class="boxhead"><h2>Environments</h2></div>
   <div class="boxbody">
-    <ul>{% for env in enviros %}
+    <ul><a href="#" class="togglefold">Environments</a> <span class="checklinks">(<a href="#" class="checkall">All</a>, <a href="#" class="uncheckall">None</a>)</span>
+    {% for env in enviros %}
       <li title="{{ env.os }}, {{ env.cpu }}">
-        <input id="env_{{ env.id }}" type="checkbox" name="environments" value="{{ env.id }}" />
+        <input id="env_{{ env.id }}" type="checkbox" name="environments" value="{{ env.id }}"{% if env in checkedenviros %} checked{% endif %} />
         <label for="env_{{ env.id }}">{{ env }}</label>
       </li>{% endfor %}
     </ul>
@@ -93,10 +94,6 @@
 <script type="text/javascript" src="{% static 'js/comparison.js' %}"></script>
 
 <script type="text/javascript">
-  var checkboxes = document.getElementsByTagName('environments');
-  for (c in checkboxes) {
-    c.checked = false;
-  }
   $(function() {
     Comparison.init({
       chart_type: "{{ selectedchart }}",

@@ -326,7 +326,10 @@ def comparison(request):
     enviros = Environment.objects.all()
     if not enviros:
         return no_environment_error(request)
-    checkedenviros = get_default_environment(enviros, data)
+    checkedenviros = get_default_environment(enviros, data, multi=True)
+    if 'env' not in data and \
+            get_setting('COMP_ENVIRONMENTS_DEFAULT', 'all') == 'default':
+        checkedenviros = get_default_environment(enviros, data)
 
     if not len(Project.objects.filter(track=True)):
         return no_default_project_error(request)
@@ -395,13 +398,18 @@ def comparison(request):
 
     benchmarks = {}
     bench_units = {}
-    for source_val, source_label in Benchmark.S_TYPES:
+    sources = [(val, label) for val, label in Benchmark.S_TYPES
+               if Benchmark.objects.filter(source=val).exists()]
+    # Sidebar groups: by source when there are several, else by units title
+    group_by_source = len(sources) > 1
+    for source_val, source_label in sources:
         qs = Benchmark.objects.filter(source=source_val)
-        if not qs.exists():
-            continue
-        benchmarks[source_label] = qs
+        if group_by_source:
+            benchmarks[source_label] = qs
         for unit in qs.values_list('units_title', flat=True).distinct():
             unit_qs = qs.filter(units_title=unit)
+            if not group_by_source:
+                benchmarks[unit] = unit_qs
             units = unit_qs[0].units
             lessisbetter = (unit_qs[0].lessisbetter and
                             ' (less is better)' or ' (more is better)')
@@ -806,6 +814,9 @@ def timeline(request):
     for proj in Project.objects.filter(track=True):
         executables[proj] = Executable.objects.filter(project=proj)
     use_median_bands = hasattr(settings, 'USE_MEDIAN_BANDS') and settings.USE_MEDIAN_BANDS
+    grid_revisions = get_setting('TIMELINE_GRID_REVISIONS', None)
+    if grid_revisions and grid_revisions not in lastrevisions:
+        lastrevisions = sorted(lastrevisions + [grid_revisions])
     if isinstance(defaultbenchmark, Benchmark):
         defaultbenchmark_value = defaultbenchmark.ident()
     else:
@@ -821,6 +832,7 @@ def timeline(request):
         'defaultenvironments': defaultenvironments,
         'lastrevisions': lastrevisions,
         'defaultlast': defaultlast,
+        'grid_revisions': grid_revisions,
         'executables': executables,
         'benchmarks': benchmarks,
         'environments': enviros,

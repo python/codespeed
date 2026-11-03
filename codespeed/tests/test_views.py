@@ -455,6 +455,67 @@ class TestTimeline(TestCase):
             responsedata['timelines'][0]['branches']['master']['1:1'][1],
             [u'2011/04/13 17:04:22 +0000', 2000.0, 1.11111, u'2', u'', u'master', u''])
 
+    def test_no_source_fold_with_one_source(self):
+        """A single source shows a flat benchmark list and no fold header"""
+        response = self.client.get(reverse('timeline'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.context['grid_revisions'])
+        self.assertNotContains(response, 'class="togglefold">Legacy</a>')
+        self.assertContains(response, 'grid_revisions: null')
+
+    def test_source_fold_with_several_sources(self):
+        Benchmark.objects.create(name='float', source='pyperformance')
+        response = self.client.get(reverse('timeline'))
+        self.assertContains(response, 'class="togglefold">Legacy</a>')
+        self.assertContains(response, 'class="togglefold">PyPerformance</a>')
+
+    @override_settings(TIMELINE_GRID_REVISIONS=25)
+    def test_grid_revisions_setting(self):
+        response = self.client.get(reverse('timeline'))
+        self.assertEqual(response.context['grid_revisions'], 25)
+        self.assertIn(25, response.context['lastrevisions'])
+        self.assertContains(response, 'grid_revisions: 25')
+
+
+class TestComparison(TestCase):
+    fixtures = ["timeline_tests.json"]
+
+    def setUp(self):
+        self.path = reverse('comparison')
+        self.dual = Environment.objects.get(name='Dual Core')
+        self.quad = Environment.objects.create(name='Quad Core')
+
+    def checked_env_names(self, response):
+        return sorted(e.name for e in response.context['checkedenviros'])
+
+    def test_all_environments_checked_by_default(self):
+        response = self.client.get(self.path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.checked_env_names(response),
+                         ['Dual Core', 'Quad Core'])
+
+    @override_settings(COMP_ENVIRONMENTS_DEFAULT='default',
+                       DEF_ENVIRONMENT='Quad Core')
+    def test_only_default_environment_checked(self):
+        response = self.client.get(self.path)
+        self.assertEqual(self.checked_env_names(response), ['Quad Core'])
+        # Permalinks still select several environments
+        response = self.client.get(
+            self.path, {'env': '%d,%d' % (self.dual.id, self.quad.id)})
+        self.assertEqual(self.checked_env_names(response),
+                         ['Dual Core', 'Quad Core'])
+
+    def test_benchmarks_grouped_by_units_with_one_source(self):
+        response = self.client.get(self.path)
+        self.assertEqual(list(response.context['benchmarks']), ['Time'])
+        self.assertContains(response, 'class="togglefold">Time</a>')
+
+    def test_benchmarks_grouped_by_source_with_several_sources(self):
+        Benchmark.objects.create(name='float', source='pyperformance')
+        response = self.client.get(self.path)
+        self.assertEqual(list(response.context['benchmarks']),
+                         ['Legacy', 'PyPerformance'])
+
 
 @override_settings(ALLOW_ANONYMOUS_POST=True)
 class TestReports(TestCase):

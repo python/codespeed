@@ -50,6 +50,10 @@ TIMELINE_GRID_LIMIT = 30  # Number of benchmarks beyond which the timeline view
                           # undeseriable.
 
 TIMELINE_GRID_PAGING = 4   # Number of benchmarks to be send in one grid request
+
+TIMELINE_GRID_REVISIONS = None  # Number of revisions plotted per benchmark in the
+                                # timeline grid. None keeps the count selected in
+                                # the "Show the last" dropdown.
                            # May be adjusted to improve the performance of the timeline grid view.
                            # If a large number of benchmarks is in the system,
                            # and the database is not fast, it can take a long time
@@ -68,6 +72,10 @@ NORMALIZATION = False # True will enable normalization as the default selection
 
 CHART_ORIENTATION = 'vertical' # 'vertical' or 'horizontal can be chosen as
                               # default chart orientation
+
+COMP_ENVIRONMENTS_DEFAULT = 'all'  # Environments checked by default on the comparison
+                                   # page: 'all', or 'default' for DEF_ENVIRONMENT only
+                                   # (falling back to the first environment)
 
 COMP_EXECUTABLES = None  # Which executable + revision should be checked as default
                          # Given as a list of tuples containing the

@@ -219,6 +219,8 @@ The main customization for the homepage is to display either the reports
 * `NORMALIZATION`: Defines whether normalization should be enabled as default
   in the Comparison view.
 * `CHART_ORIENTATION`: horizontal or vertical
+* `COMP_ENVIRONMENTS_DEFAULT`: `all` (the default) checks every environment;
+  `default` checks only `DEF_ENVIRONMENT`, or the first environment.
 * `COMP_EXECUTABLES`: per default all executables will be checked. When there
   are a large number of tags or executables, it is better to only select a few
   so that the plots are not too cluttered.

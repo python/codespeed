@@ -67,7 +67,7 @@
   </ul>{% endif %}
   {% regroup benchmarks by get_source_display as benchmark_groups %}
   {% for group in benchmark_groups %}
-  <ul><a href="#" class="togglefold">{{ group.grouper }}</a>
+  <ul>{% if benchmark_groups|length > 1 %}<a href="#" class="togglefold">{{ group.grouper }}</a>{% endif %}
     {% for bench in group.list|dictsort:"name" %}
     <li title="{{ bench.description }}">
       <input id="benchmark_{{ bench.id }}" type="radio" name="benchmark" value="{{ bench.ident }}" />
@@ -120,6 +120,7 @@
   $(function() {
     Timeline.init({
       revisions: {{ defaultlast }},
+      grid_revisions: {{ grid_revisions|default_if_none:"null" }},
       baseline: "{{ defaultbaseline }}",
       executables: [{% for exe in checkedexecutables %}{{ exe.id }}, {% endfor %}],
       branches: [{% for b in branch_list %}"{{ branch }}", {% endfor %}],

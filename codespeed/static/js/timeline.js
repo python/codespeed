@@ -554,7 +554,10 @@ function render(data) {
             config.nextBenchmarks = data.nextBenchmarks;
             $.getJSON("json/", config, render);
         }
-        $("#revisions").val(15).attr("disabled", true);
+        if (defaults.grid_revisions) {
+            $("#revisions").val(defaults.grid_revisions);
+        }
+        $("#revisions").attr("disabled", true);
         $("#equidistant").attr("disabled", true);
         for (var i = 0; i < data.timelines.length; i++) {
             var tl = data.timelines[i];

@@ -482,6 +482,10 @@ function init(defaults) {
         updateBaselineDropdown();
         refreshContent();
     });
+    $("#environment .checkall, #environment .uncheckall").click(function() {
+        updateBaselineDropdown();
+        refreshContent();
+    });
 
     $.ajaxSetup ({
       cache: false

@@ -100,6 +100,8 @@ DEF_EXECUTABLES = [
 DEF_ENVIRONMENT = 'benchmarker2'
 CHART_ORIENTATION = 'horizontal'
 DEF_BENCHMARK = 'grid'
+TIMELINE_GRID_REVISIONS = 15
+COMP_ENVIRONMENTS_DEFAULT = 'default'
 
 
 from .local_settings import *
