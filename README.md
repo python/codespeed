@@ -50,6 +50,12 @@ The codespeed installation can now be accessed by navigating to `http://localhos
 modify `sample_project/settings.py` and set `DEBUG = False`.
 [`sample_project/README.md`](https://github.com/tobami/codespeed/tree/master/sample_project/README.md) also describes some production settings.
 
+### Running the tests
+
+The test suite uses its own site-independent settings module:
+
+        python manage.py test codespeed speed_python --settings=codespeed.tests.settings
+
 ## Codespeed configuration
 
 ### Using the provided test data

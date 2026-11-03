@@ -49,8 +49,9 @@ class GitTest(TestCase):
         logs = getlogs(self.revision, self.revision)
 
         # then
+        # 1583489681 rendered in the test settings' TIME_ZONE (UTC)
         expected = {
-            'date': '2020-03-06 04:14:41',
+            'date': '2020-03-06 10:14:41',
             'message': 'msg',
             'commitid': 'long_id',
             'author': 'author',

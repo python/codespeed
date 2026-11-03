@@ -1,6 +1,6 @@
 """Tests for the speed.python.org specific views.
 
-Run with: python manage.py test codespeed speed_python
+Run with: python manage.py test codespeed speed_python --settings=codespeed.tests.settings
 """
 import json
 import os
@@ -16,7 +16,7 @@ from codespeed.models import (Project, Benchmark, Revision, Branch, Executable,
 
 DUMMY_CACHE = {'default': {'BACKEND': 'django.core.cache.backends.dummy.DummyCache'}}
 SITE_DIR = os.path.dirname(os.path.abspath(__file__))
-# The test settings belong to sample_project; render this site's templates instead.
+# The test settings are site independent; render this site's templates instead.
 SITE_TEMPLATES = [{
     'BACKEND': 'django.template.backends.django.DjangoTemplates',
     'DIRS': [os.path.join(SITE_DIR, 'templates')],
