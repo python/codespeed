@@ -17,7 +17,6 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.cache import cache_page
 from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.generic.base import TemplateView
 
 from .auth import basic_auth_required
@@ -98,24 +97,6 @@ class HomeView(TemplateView):
             print('exception', e)
             context['show_historical'] = False
             return context
-
-
-@require_GET
-@xframe_options_exempt
-def embed_comparison(request):
-    """Frame-exempt page rendering only the baseline-comparison
-    for embedding on pypy.org"""
-    context = {}
-    try:
-        context['baseline'] = Executable.objects.get(
-            name=settings.DEF_BASELINES[0]['executable'])
-        def_name = settings.DEF_EXECUTABLES[0]['name']
-        def_project = Project.objects.get(name=settings.DEF_EXECUTABLES[0]['project'])
-        context['default_exe'] = Executable.objects.get(
-            name=def_name, project=def_project)
-    except Exception as e:
-        logger.error('embed_comparison: %s', e)
-    return render(request, 'embed_comparison.html', context)
 
 
 # The historical comparison only changes when new results are saved, which
