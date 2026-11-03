@@ -287,17 +287,17 @@ class TestProject(TestCase):
         # It should work with https:// as well as git:// urls
         self.github_project.save()
         self.assertEqual(self.github_project.commit_browsing_url,
-                          'https://github.com/tobami/codespeed.git/'
-                          'commit/{commitid}')
+                         'https://github.com/tobami/codespeed.git/'
+                         'commit/{commitid}')
 
         self.github_project.repo_path = 'git://github.com/tobami/codespeed.git'
         self.github_project.save()
         self.assertEqual(self.github_project.commit_browsing_url,
-                          'https://github.com/tobami/codespeed.git/'
-                          'commit/{commitid}')
+                         'https://github.com/tobami/codespeed.git/'
+                         'commit/{commitid}')
 
         # If filled in, commit browsing url should not change
         self.github_project.commit_browsing_url = 'https://example.com/{commitid}'
         self.github_project.save()
         self.assertEqual(self.github_project.commit_browsing_url,
-                          'https://example.com/{commitid}')
+                         'https://example.com/{commitid}')

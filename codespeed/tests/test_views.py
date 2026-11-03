@@ -99,7 +99,7 @@ class TestAddResult(TestCase):
         response = self.client.post(self.path, self.data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.content.decode(),
-                          "Environment " + bad_name + " not found")
+                         "Environment " + bad_name + " not found")
         self.data['environment'] = 'Dual Core'
 
     def test_empty_argument(self):
@@ -118,7 +118,7 @@ class TestAddResult(TestCase):
         """Should respond 400 when a POST request is missing an argument"""
         for key in list(self.data):
             backup = self.data[key]
-            del(self.data[key])
+            del self.data[key]
             response = self.client.post(self.path, self.data)
             self.assertEqual(response.status_code, 400)
             self.assertEqual(
@@ -290,7 +290,7 @@ class TestAddJSONResults(TestCase):
         # Check that we get a success response
         self.assertEqual(response.status_code, 202)
         self.assertEqual(response.content.decode(),
-                          "All result data saved successfully")
+                         "All result data saved successfully")
 
         # Check that the data was correctly saved
         e = Environment.objects.get(name='bigdog')
@@ -365,7 +365,7 @@ class TestAddJSONResults(TestCase):
         data = self.data[2]
         for key in list(data):
             backup = data[key]
-            del(data[key])
+            del data[key]
             response = self.client.post(self.path,
                                         {'json': json.dumps(self.data)})
             self.assertEqual(response.status_code, 400)

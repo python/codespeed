@@ -126,7 +126,8 @@ def getdefaultexecutable():
             settings.DEF_EXECUTABLES is not None):
         try:
             def_name = settings.DEF_EXECUTABLES[0]['name']
-            def_project = Project.objects.get(name=settings.DEF_EXECUTABLES[0]['project'])
+            def_project = Project.objects.get(
+                name=settings.DEF_EXECUTABLES[0]['project'])
             default = Executable.objects.get(name=def_name, project=def_project)
         except Executable.DoesNotExist:
             pass

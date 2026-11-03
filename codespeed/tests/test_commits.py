@@ -4,17 +4,18 @@ import subprocess
 import tempfile
 import os
 
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.urls import reverse
 
 from codespeed.models import (Project, Benchmark, Revision, Branch, Executable,
-                              Environment, Result, Report)
+                              Environment)
 
 hgdir = ''
 
 # hg aborts on commit when ui.username is unset, which is the case on a CI
 # runner with no ~/.hgrc, so supply one explicitly.
 HG_USER = ['-u', 'Codespeed Tests <tests@example.com>']
+
 
 def setUpModule():
     global hgdir
@@ -34,8 +35,10 @@ def setUpModule():
     subprocess.check_call(['hg', 'commit', '-m', "second commit"] + HG_USER,
                           cwd=hgdir.name)
 
+
 def tearDownModule():
     hgdir.cleanup()
+
 
 class TestMercurial(TestCase):
 
@@ -65,5 +68,5 @@ class TestMercurial(TestCase):
 
     def test_hg(self):
         with self.settings(REPOSITORY_BASE_PATH=os.path.dirname(self.hgdir)):
-            response = self.client.get(reverse('displaylogs'), {'revisionid':1})
+            response = self.client.get(reverse('displaylogs'), {'revisionid': 1})
         assert response.status_code == 200, 'expected 200 got %d' % response.status_code
