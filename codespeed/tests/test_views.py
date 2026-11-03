@@ -5,6 +5,7 @@ import json
 
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from codespeed.models import (Project, Benchmark, Revision, Branch, Executable,
                               Environment, Result, Report)
@@ -77,7 +78,7 @@ class TestAddResult(TestCase):
         r = Revision.objects.get(commitid='23', branch=branch)
 
         # Tweak the resolution down to avoid failing over very slight differences:
-        self.assertEqual(r.date, revision_date)
+        self.assertEqual(r.date, timezone.make_aware(revision_date))
 
         i = Executable.objects.get(name='myexe O3 64bits')
         b = Benchmark.objects.get(name='float')
@@ -87,7 +88,7 @@ class TestAddResult(TestCase):
             benchmark=b,
             environment=e
         )
-        self.assertEqual(res.date, result_date)
+        self.assertEqual(res.date, timezone.make_aware(result_date))
         self.assertEqual(res.std_dev, 1.11111)
         self.assertEqual(res.val_max, 2)
         self.assertEqual(res.val_min, 1)
@@ -408,7 +409,7 @@ class TestTimeline(TestCase):
         response = self.client.get(path)
         self.assertEqual(response.status_code, 200)
         responsedata = response.content.decode()
-        self.assertIn("MyProject's Speed Center: Timeline", responsedata)
+        self.assertIn('My Own Title\n: Timeline', responsedata)
 
     def test_gettimelinedata(self):
         """Test that gettimelinedata returns correct timeline data
@@ -443,7 +444,7 @@ class TestTimeline(TestCase):
             "There are 2 datapoints")
         self.assertEqual(
             responsedata['timelines'][0]['branches']['master']['1:1'][1],
-            [u'2011/04/13 17:04:22 ', 2000.0, 1.11111, u'2', u'', u'master', u''])
+            [u'2011/04/13 17:04:22 +0000', 2000.0, 1.11111, u'2', u'', u'master', u''])
 
 
 @override_settings(ALLOW_ANONYMOUS_POST=True)

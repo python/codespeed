@@ -10,7 +10,7 @@ setup(
     license='GNU Lesser General Public License version 2.1',
     keywords=['benchmarking', 'visualization'],
     install_requires=['django', 'isodate', 'matplotlib'],
-    packages=find_packages(exclude=['ez_setup', 'sample_project']),
+    packages=find_packages(exclude=['ez_setup', 'sample_project', 'speed_python', 'speed_pypy']),
     long_description='README.md',
     long_description_content_type="text/markdown",
     description='A web application to monitor and analyze the performance of your code',
@@ -32,4 +32,3 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: WSGI :: Application',
     ]
 )
-

@@ -1,5 +1,20 @@
+"""Django settings for running the Codespeed test suite.
+
+Site independent: no site package is involved, so the suite exercises the
+``codespeed`` app on its own. Site packages such as ``speed_pypy`` run their
+tests under these settings too and override what they need per test case.
+
+Usage::
+
+    python manage.py test codespeed --settings=codespeed.tests.settings
+"""
 import os
-from codespeed.settings import *
+
+from codespeed.settings import *  # noqa: F401,F403
+
+TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
+
+DEBUG = False
 
 DATABASES = {
     'default': {
@@ -10,8 +25,9 @@ DATABASES = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 SECRET_KEY = 'test-secret-key-not-for-production'
-USE_TZ = False
+USE_TZ = True
 TIME_ZONE = 'UTC'
+USE_I18N = False
 
 INSTALLED_APPS = (
     'django.contrib.auth',
@@ -31,12 +47,13 @@ MIDDLEWARE = (
     'django.contrib.messages.middleware.MessageMiddleware',
 )
 
-ROOT_URLCONF = 'speed_pypy.urls'
+ROOT_URLCONF = 'codespeed.urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        # Site-style template overrides the tests check for
+        'DIRS': [os.path.join(TESTS_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -50,4 +67,10 @@ TEMPLATES = [
 ]
 
 STATIC_URL = '/static/'
+
+# Codespeed clones repositories here when commit logs are requested.
 REPOSITORY_BASE_PATH = '/tmp/codespeed-test-repos'
+
+CACHES = {
+    'default': {'BACKEND': 'django.core.cache.backends.dummy.DummyCache'},
+}
