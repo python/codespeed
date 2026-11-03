@@ -1,6 +1,7 @@
 """Tests for the speed.python.org specific views.
 
-Run with: python manage.py test codespeed speed_python --settings=codespeed.tests.settings
+Run with:
+    python manage.py test codespeed speed_python --settings=codespeed.tests.settings
 """
 import json
 import os

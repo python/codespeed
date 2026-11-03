@@ -18,7 +18,7 @@ jobs:
         with:
           python-version: "3.13"
       - run: pip install -r requirements-dev.txt
-      - run: flake8 codespeed
+      - run: flake8 codespeed speed_python speed_pypy
 
   test:
     runs-on: ubuntu-latest
