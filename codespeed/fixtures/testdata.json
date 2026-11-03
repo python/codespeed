@@ -219,7 +219,7 @@
     "fields": {
         "name": "float",
         "parent": null,
-        "benchmark_type": "C",
+        "source": "legacy",
         "data_type": "U",
         "description": "",
         "units_title": "Time",
@@ -234,7 +234,7 @@
     "fields": {
         "name": "int",
         "parent": null,
-        "benchmark_type": "C",
+        "source": "legacy",
         "data_type": "U",
         "description": "",
         "units_title": "Time",

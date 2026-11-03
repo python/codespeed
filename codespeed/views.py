@@ -261,17 +261,12 @@ def comparison(request):
     if not checkedexecutables:
         checkedexecutables = exekeys
 
-    units_titles = Benchmark.objects.filter(
-        benchmark_type="C"
-    ).values('units_title').distinct()
+    units_titles = Benchmark.objects.values('units_title').distinct()
     units_titles = [unit['units_title'] for unit in units_titles]
     benchmarks = {}
     bench_units = {}
     for unit in units_titles:
-        # Only include benchmarks marked as cross-project
-        benchmarks[unit] = Benchmark.objects.filter(
-            benchmark_type="C"
-        ).filter(units_title=unit)
+        benchmarks[unit] = Benchmark.objects.filter(units_title=unit)
         units = benchmarks[unit][0].units
         lessisbetter = (benchmarks[unit][0].lessisbetter and
                         ' (less is better)' or ' (more is better)')
@@ -289,9 +284,7 @@ def comparison(request):
             except Benchmark.DoesNotExist:
                 pass
     if not checkedbenchmarks:
-        # Only include benchmarks marked as cross-project
-        checkedbenchmarks = Benchmark.objects.filter(
-            benchmark_type="C", default_on_comparison=True)
+        checkedbenchmarks = Benchmark.objects.filter(default_on_comparison=True)
 
     charts = ['normal bars', 'stacked bars', 'relative bars']
     # Don't show relative charts as an option if there is only one executable

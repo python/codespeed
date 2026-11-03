@@ -210,7 +210,7 @@
         "fields": {
             "parent": null,
             "name": "float",
-            "benchmark_type": "C",
+            "source": "legacy",
             "default_on_comparison": true,
             "units_title": "Time",
             "units": "seconds",
@@ -224,7 +224,7 @@
         "fields": {
             "parent": null,
             "name": "int",
-            "benchmark_type": "C",
+            "source": "legacy",
             "default_on_comparison": true,
             "units_title": "Time",
             "units": "seconds",

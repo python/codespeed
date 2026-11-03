@@ -43,7 +43,7 @@ class TestAddResult(TestCase):
         # Check that the data was correctly saved
         e = Environment.objects.get(name='Dual Core')
         b = Benchmark.objects.get(name='float')
-        self.assertEqual(b.benchmark_type, "C")
+        self.assertEqual(b.source, "legacy")
         self.assertEqual(b.units, "seconds")
         self.assertEqual(b.lessisbetter, True)
         p = Project.objects.get(name='MyProject')
@@ -226,7 +226,7 @@ class TestAddJSONResults(TestCase):
         # Check that the data was correctly saved
         e = Environment.objects.get(name='bigdog')
         b = Benchmark.objects.get(name='Richards')
-        self.assertEqual(b.benchmark_type, "C")
+        self.assertEqual(b.source, "legacy")
         self.assertEqual(b.units, "seconds")
         self.assertEqual(b.lessisbetter, True)
         p = Project.objects.get(name='pypy')

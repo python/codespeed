@@ -178,21 +178,21 @@ class Executable(models.Model):
 
 
 class Benchmark(models.Model):
-    B_TYPES = (
-        ('C', 'Cross-project'),
-        ('O', 'Own-project'),
+    S_TYPES = (
+        ('legacy', 'Legacy'),
+        ('pyperformance', 'PyPerformance'),
     )
     D_TYPES = (
         ('U', 'Mean'),
         ('M', 'Median'),
     )
 
-    name = models.CharField(unique=True, max_length=100)
+    name = models.CharField(max_length=100)
     parent = models.ForeignKey(
         'self', on_delete=models.CASCADE, verbose_name="parent",
         help_text="allows to group benchmarks in hierarchies",
         null=True, blank=True, default=None)
-    benchmark_type = models.CharField(max_length=1, choices=B_TYPES, default='C')
+    source = models.CharField(max_length=14, choices=S_TYPES, default='legacy')
     data_type = models.CharField(max_length=1, choices=D_TYPES, default='U')
     description = models.CharField(max_length=300, blank=True)
     units_title = models.CharField(max_length=30, default='Time')
@@ -201,14 +201,14 @@ class Benchmark(models.Model):
     default_on_comparison = models.BooleanField(
         "Default on comparison page", default=True)
 
+    class Meta:
+        unique_together = (('name', 'source'),)
+
+    def ident(self):
+        return "%s.%s" % (self.name, self.source)
+
     def __str__(self):
         return self.name
-
-    def clean(self):
-        if self.default_on_comparison and self.benchmark_type != 'C':
-            raise ValidationError("Only cross-project benchmarks are shown "
-                                  "on the comparison page. Deactivate "
-                                  "'default_on_comparison' first.")
 
 
 class Environment(models.Model):
@@ -229,6 +229,7 @@ class Result(models.Model):
     val_max = models.FloatField(blank=True, null=True)
     q1 = models.FloatField(blank=True, null=True)
     q3 = models.FloatField(blank=True, null=True)
+    suite_version = models.CharField(max_length=50, blank=True, default='')
     date = models.DateTimeField(blank=True, null=True)
     revision = models.ForeignKey(
         Revision, on_delete=models.CASCADE, related_name="results")

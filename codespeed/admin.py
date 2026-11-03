@@ -58,7 +58,7 @@ class ExecutableAdmin(admin.ModelAdmin):
 
 @admin.register(Benchmark)
 class BenchmarkAdmin(admin.ModelAdmin):
-    list_display = ('name', 'benchmark_type', 'data_type', 'description',
+    list_display = ('name', 'source', 'data_type', 'description',
                     'units_title', 'units', 'lessisbetter',
                     'default_on_comparison')
     list_filter = ('data_type', 'lessisbetter')
