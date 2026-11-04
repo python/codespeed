@@ -1178,6 +1178,8 @@ def makeimage(request):
     response['Content-Length'] = len(image_data)
     response['Content-Disposition'] = 'attachment; filename=image.png'
 
+    return response
+
 
 def _get_current_commit():
     try:
@@ -1195,5 +1197,3 @@ _CURRENT_COMMIT = _get_current_commit()
 
 def about(request):
     return render(request, 'about.html', {'commit': _CURRENT_COMMIT})
-
-    return response

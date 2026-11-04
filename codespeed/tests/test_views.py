@@ -420,6 +420,18 @@ class TestTimeline(TestCase):
         responsedata = response.content.decode()
         self.assertIn('My Own Title\n: Timeline', responsedata)
 
+    def test_makeimage(self):
+        response = self.client.get(reverse('makeimage'), {
+            'env': 'Dual Core', 'proj': 'MyProject', 'branch': 'master',
+            'exe': 'myexe O3 64bits', 'ben': 'float'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'image/png')
+        self.assertTrue(response.content.startswith(b'\x89PNG'))
+
+    def test_makeimage_bad_request(self):
+        response = self.client.get(reverse('makeimage'), {'env': 'Dual Core'})
+        self.assertEqual(response.status_code, 400)
+
     def test_gettimelinedata(self):
         """Test that gettimelinedata returns correct timeline data
         """
