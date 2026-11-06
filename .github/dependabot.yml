@@ -1,0 +1,24 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "quarterly"
+    groups:
+      actions:
+        patterns:
+          - "*"
+    cooldown:
+      default-days: 14
+
+  # Covers requirements.txt, requirements-dev.txt, deploy-requirements.txt,
+  # setup.py and setup.cfg.
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "quarterly"
+    groups:
+      pip:
+        patterns: ["*"]
+    cooldown:
+      default-days: 14
