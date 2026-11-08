@@ -7,8 +7,8 @@
   <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}">
 {% endblock favicon %}
 
-{# The logo carries the site name, so the text title is left empty #}
 {% block logo %}
-  <img src="{% static 'images/pypy-speed-center.svg' %}" height="40" alt="PyPy Speed Center"/>
+  <img class="logo-light" src="{% static 'images/pypy-speed-center.svg' %}" height="40" alt="PyPy Speed Center"/>
+  <img class="logo-dark" src="{% static 'images/pypy-speed-center-dark.svg' %}" height="40" alt="PyPy Speed Center"/>
 {% endblock logo %}
 {% block page_title %}{% endblock page_title %}

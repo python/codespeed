@@ -17,6 +17,13 @@ var COLORS = [
 ];
 function getColor(i) { return COLORS[i % COLORS.length]; }
 
+// Chart.js draws its own axis text and grid lines, so hand it the theme colours
+function applyChartTheme() {
+    var colors = Theme.chartColors();
+    Chart.defaults.color = colors.text;
+    Chart.defaults.borderColor = colors.grid;
+}
+
 function getExeLabel(key) {
     return $("input[name='executables']")
         .filter(function() { return $(this).val() === key; })
@@ -421,7 +428,7 @@ function renderComparisonPlot(plotid, unit, benchmarks, exes, enviros, baseline,
                                 if (ds && ds.allNull) {
                                     // Apply unicode combining strikethrough to each character
                                     item.text = item.text.split('').join('\u0336') + '\u0336';
-                                    item.fontColor = '#aaa';
+                                    item.fontColor = Theme.chartColors().faint;
                                 }
                             });
                             return items;
@@ -440,6 +447,11 @@ function renderComparisonPlot(plotid, unit, benchmarks, exes, enviros, baseline,
 }
 
 function init(defaults) {
+    applyChartTheme();
+    Theme.onChange(function() {
+        applyChartTheme();
+        if (compdata) { refreshContent(); }
+    });
     bench_units = defaults.bench_units;
 
     // Set default values
