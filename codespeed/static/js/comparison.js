@@ -29,6 +29,7 @@ function getConfiguration() {
     ben: readCheckbox("input[name='benchmarks']:checked"),
     env: readCheckbox("input[name='environments']:checked"),
     hor: $("input[name='direction']").is(':checked'),
+    com: $("input[name='common_only']").is(':checked'),
     bas: $("#baseline option:selected").val() || "none",
     chart: $("#chart_type option:selected").val()
   };
@@ -141,11 +142,28 @@ function updateGraphTitle(exes, enviros, bens, baseline, chart, chartTitles) {
     $title.text(chartTitles.join(' / '));
 }
 
+// Keep only the benchmarks that have a result for every selected
+// executable/environment pair, so each bar group covers the same set.
+function filterCommonBenchmarks(bens, exes, enviros) {
+    if (!compdata) { return bens; }
+    return bens.filter(function(ben) {
+        return exes.every(function(exe) {
+            return enviros.every(function(env) {
+                var val = compdata[exe] && compdata[exe][env]
+                    ? compdata[exe][env][ben]
+                    : null;
+                return val !== null && val !== undefined;
+            });
+        });
+    });
+}
+
 function refreshContent() {
   var conf = getConfiguration(),
       exes = conf.exe.split(","),
       bens  = conf.ben.split(","),
       enviros = conf.env.split(","),
+      hiddenCount = 0,
       msg = "";
 
   $("#graph-title").html("");
@@ -159,7 +177,19 @@ function refreshContent() {
   } else if (enviros[0] === "") {
     $("#plotwrapper").html('<p class="warning">No environments selected</p>');
     return false;
-  } else if (conf.chart === "relative bars" && conf.bas === "none") {
+  }
+
+  if (conf.com) {
+    var common = filterCommonBenchmarks(bens, exes, enviros);
+    hiddenCount = bens.length - common.length;
+    bens = common;
+    if (bens.length === 0) {
+      $("#plotwrapper").html('<p class="warning">No benchmark has results for every selected executable and environment</p>');
+      return false;
+    }
+  }
+
+  if (conf.chart === "relative bars" && conf.bas === "none") {
     msg = '<p class="warning">For relative bar charts, you must select a baseline to normalize to.</p>';
     $("#plotwrapper").html(msg);
     return false;
@@ -183,6 +213,14 @@ function refreshContent() {
     }
   }
 
+  var hiddenMsg = "";
+  if (hiddenCount > 0) {
+    hiddenMsg = '<p class="warning">' + hiddenCount + ' benchmark' +
+      (hiddenCount === 1 ? '' : 's') +
+      ' hidden because not every selected executable has a result for ' +
+      (hiddenCount === 1 ? 'it' : 'them') + '.</p>';
+  }
+
   chartInstances.forEach(function(c) { c.destroy(); });
   chartInstances = [];
   $("#plotwrapper").fadeOut("fast", function() {
@@ -204,6 +242,8 @@ function refreshContent() {
       var t = renderComparisonPlot(plotid, unit, benchmarks, exes, enviros, conf.bas, conf.chart, conf.hor);
       chartTitles.push(t);
     }
+    // Shown below the chart(s) so it does not push them down
+    $("#plotwrapper").append(hiddenMsg);
     updateGraphTitle(exes, enviros, bens, conf.bas, conf.chart, chartTitles);
   });
 }
@@ -445,6 +485,7 @@ function init(defaults) {
     // Set default values
     $("#chart_type").val(defaults.chart_type);
     $("#direction").prop('checked', defaults.direction === "True");
+    $("#common_only").prop('checked', defaults.common_only === "True");
 
     /*
     var sel = $("input[name='executables']");
@@ -477,7 +518,7 @@ function init(defaults) {
     $("#benchmark .checkall, #benchmark .uncheckall").click(loadData);
 
     // Re-render without re-fetching for other controls
-    $("#chart_type, #baseline, #direction").change(refreshContent);
+    $("#chart_type, #baseline, #direction, #common_only").change(refreshContent);
     $("input[name='environments']").change(function() {
         updateBaselineDropdown();
         refreshContent();
@@ -536,6 +577,9 @@ function init(defaults) {
         var exes = conf.exe ? conf.exe.split(",").filter(Boolean) : [];
         var enviros = readCheckbox("input[name='environments']:checked").split(",").filter(Boolean);
         var benchmarks = conf.ben ? conf.ben.split(",").filter(Boolean) : [];
+        if (conf.com) {
+            benchmarks = filterCommonBenchmarks(benchmarks, exes, enviros);
+        }
 
         // Header row: benchmark, then one column per exe@env
         var header = ["benchmark"];

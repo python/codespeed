@@ -476,6 +476,10 @@ def comparison(request):
             settings.CHART_ORIENTATION == 'horizontal'):
         selecteddirection = True
 
+    # Hide benchmarks that lack a result for any selected executable, so
+    # every bar group covers the same set of benchmarks.
+    selectedcommon = data.get('com') == 'true'
+
     return render(request, 'codespeed/comparison.html', {
         'checkedexecutables': checkedexecutables,
         'checkedbenchmarks': checkedbenchmarks,
@@ -487,7 +491,8 @@ def comparison(request):
         'charts': charts,
         'selectedbaseline': selectedbaseline,
         'selectedchart': selectedchart,
-        'selecteddirection': selecteddirection
+        'selecteddirection': selecteddirection,
+        'selectedcommon': selectedcommon,
     })
 
 def get_setting(name, default = None):
