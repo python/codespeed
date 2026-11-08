@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Adds the default branch to all existing revisions
 
 Note: This file is assumed to be in the same directory
@@ -7,6 +6,7 @@ shell environment DJANGO_SETTINGS_MODULE
 """
 import sys
 import os
+from functools import reduce
 
 
 ## Setup to import models from Django app ##

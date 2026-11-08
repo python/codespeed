@@ -1,20 +1,25 @@
 # Codespeed
 [![Tests](https://github.com/python/codespeed/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/python/codespeed/actions/workflows/test.yml)
-[![PyPI version](https://img.shields.io/pypi/v/codespeed.svg)](https://pypi.python.org/pypi/codespeed)
 
 Codespeed is a web application to monitor and analyze the performance of your code.
 
-Known to be used by [CPython](https://speed.python.org), [PyPy](http://speed.pypy.org), [Twisted](http://speed.twistedmatrix.com) and others.
+This started as a fork of [tobami/codespeed](https://github.com/tobami/codespeed),
+however it is now developed independently here, and has different requirements. 
+The `codespeed` Django app is still generic and could possibly be used for other
+projects. `speed_python` and `speed_pypy` hold what is specific to the two sites.
 
-For an overview of some application concepts see the [wiki page](https://github.com/tobami/codespeed/wiki/Overview)
+For an overview of some application concepts see the original project's
+[wiki page](https://github.com/tobami/codespeed/wiki/Overview).
 
 ## Installation
 
-You will need Python 2.7 or 3.5+.
+You will need Python 3.10 or newer.
 
-To install dependencies and the codespeed Django app:
+Clone this repository and install the dependencies:
 
-    pip install codespeed
+    git clone https://github.com/python/codespeed.git
+    cd codespeed
+    pip install -r requirements.txt
 
 If you want version control integration, there are additional requirements:
 
@@ -27,8 +32,6 @@ If you want version control integration, there are additional requirements:
 Codespeed will try to clone the repo, which depending on the size of the project
 can take a long time. Please be patient.
 
-* Download the last stable release from
-  [github.com/tobami/codespeed/tags](https://github.com/tobami/codespeed/tags), unpack it and install it with `python setup.py install`.
 * To get started, you can use the `sample_project` directory as a starting point for your Django project, which can be normally configured by editing `sample_project/settings.py`.
 * For simplicity, you can use the default sqlite configuration, which will save
   the data to a database named `data.db`
@@ -48,7 +51,6 @@ The codespeed installation can now be accessed by navigating to `http://localhos
 
 **Note**: for production, you should configure a real server like Apache or nginx (refer to the [Django docs](http://docs.djangoproject.com/en/dev/howto/deployment/)). You should also
 modify `sample_project/settings.py` and set `DEBUG = False`.
-[`sample_project/README.md`](https://github.com/tobami/codespeed/tree/master/sample_project/README.md) also describes some production settings.
 
 ### Running the tests
 
@@ -245,13 +247,14 @@ COMP_EXECUTABLES = [
   which have low rate limits so an exception may be thrown when retrieving info
   from the Github API due to the rate limit being reached.
 
-## Getting help
+## Getting help and reporting bugs
 
-For help regarding the configuration of Codespeed, or to share any ideas or
-suggestions you may have, please post on Codespeed's [discussion
-group](http://groups.google.com/group/codespeed)
+Questions, suggestions and bug reports for this fork belong on the
+[GitHub issue tracker](https://github.com/python/codespeed/issues).
+The original project's Google group and issue tracker are no longer active.
 
-## Reporting bugs
+## History and license
 
-If you find any bug in Codespeed please report it on the
-[Github issue tracker](https://github.com/tobami/codespeed/issues)
+Codespeed was written by Miquel Torres and contributors (see `AUTHORS`). It is
+licensed under the GNU Lesser General Public License v2.1 (see `LICENSE`), this
+fork keeps that license.

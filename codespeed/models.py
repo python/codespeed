@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
-
 import logging
 import os
 import json
@@ -77,10 +74,10 @@ class Project(models.Model):
                     m.group('username'), m.group('project')
                 )
                 self.commit_browsing_url = url
-        super(Project, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
-class HistoricalValue(object):
+class HistoricalValue:
     def __init__(self, name=None, val=0, color='none'):
         self.name = name
         self.val = val
@@ -241,7 +238,7 @@ class Result(models.Model):
         Environment, on_delete=models.CASCADE, related_name="results")
 
     def __str__(self):
-        return u"%s: %s" % (self.benchmark.name, self.value)
+        return "%s: %s" % (self.benchmark.name, self.value)
 
     class Meta:
         unique_together = ("revision", "executable", "benchmark", "environment")
@@ -259,7 +256,7 @@ class Report(models.Model):
     _tablecache = models.TextField(blank=True)
 
     def __str__(self):
-        return u"Report for %s" % self.revision
+        return "Report for %s" % self.revision
 
     class Meta:
         unique_together = ("revision", "executable", "environment")
@@ -270,7 +267,7 @@ class Report(models.Model):
         changes = self.aggregate_significant_changes(tablelist)
         self.update_to_highest_priority_change(changes)
 
-        super(Report, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def update_to_highest_priority_change(self, changes):
         average_change = changes['average_change']
@@ -367,7 +364,7 @@ class Report(models.Model):
         direction = val >= 0 and "up" or "down"
         aval = abs(val)
         if aval == float("inf"):
-            return u"%s ∞%%" % direction
+            return "%s ∞%%" % direction
         else:
             return "%s %.1f%%" % (direction, aval)
 

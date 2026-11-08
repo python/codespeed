@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Create the default branch for all existing projects
 Starting v 0.8.0 that is mandatory.
@@ -9,6 +8,7 @@ shell environment DJANGO_SETTINGS_MODULE
 """
 import sys
 import os
+from functools import reduce
 
 
 ## Setup to import models from Django app ##
@@ -49,7 +49,7 @@ def main():
         if not proj.branches.filter(name='default'):
             trunk = Branch(name='default', project=proj)
             trunk.save()
-            print "Created branch 'default' for project {0}".format(proj)
+            print("Created branch 'default' for project {0}".format(proj))
 
 
 if __name__ == '__main__':

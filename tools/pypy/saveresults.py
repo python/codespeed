@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #######################################################
 # This script saves result data                       #
 # It expects the format of unladen swallow's perf.py  #
@@ -19,18 +18,14 @@ Example usage:
   $ ./saveresults.py result.json -r '45757:fabe4fc0dc08' -n pypy-c-jit-64 \
     -H benchmarker
 """
-from __future__ import division, print_function
 
 from datetime import datetime
 import optparse
 import sys
 import time
-try:
-    import urllib2
-    from urllib import urlencode
-except ImportError:
-    import urllib.request as urllib2
-    from urllib.parse import urlencode
+from urllib.error import URLError
+from urllib.request import urlopen
+from urllib.parse import urlencode
 import json
 import pprint
 
@@ -116,19 +111,19 @@ def send(data, url):
         while True:
             try:
                 print('result/add')
-                f = urllib2.urlopen(url + 'result/add/json/', params)
+                f = urlopen(url + 'result/add/json/', params)
                 print('urlopen')
                 response = f.read().decode()
                 print('response')
                 f.close()
                 break
-            except urllib2.URLError:
+            except URLError:
                 if not retries:
                     raise
                 d = retries.pop(0)
                 print("retrying in %d seconds..." % d)
                 time.sleep(d)
-    except urllib2.URLError as e:
+    except URLError as e:
         if hasattr(e, 'reason'):
             response = '\n  We failed to save the data\n'
             response += '  Reason: ' + str(e.reason)
