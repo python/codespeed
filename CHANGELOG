@@ -1,5 +1,9 @@
 == Change Log ==
 
+This file records the releases of the original tobami/codespeed project and
+ends with its last release, 0.13.0. The python/codespeed fork does not cut
+releases, its changes since then are described by Git history.
+
 === Version 0.13.0, February 23, 2019 ===
 * NEW #263: Added support for Django 2.1, drop support for Django 1.8
 * NEW #255: Allow partial requests of timeline grid

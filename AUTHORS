@@ -1,4 +1,4 @@
-Codespeed is written and maintained by Miquel Torres Barceló and various contributors:
+Codespeed was written by Miquel Torres Barceló and various contributors:
 
 	Frank Becker
 	Chris Adams
@@ -32,3 +32,7 @@ Codespeed is written and maintained by Miquel Torres Barceló and various contri
 	Octavian Moraru
 	Iskander (Alex) Sharipov
 	Tim (Timmmm)
+
+This fork, which powers speed.python.org and speed.pypy.org, is developed
+independently of tobami/codespeed at https://github.com/python/codespeed.
+Its contributors are recorded in the Git history.

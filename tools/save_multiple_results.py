@@ -1,10 +1,10 @@
-# -*- coding: utf-8 -*-
 ####################################################
 # Sample script that shows how to save result data using json #
 ####################################################
-import urllib
-import urllib2
 import json
+from urllib.error import HTTPError
+from urllib.parse import urlencode
+from urllib.request import urlopen
 
 
 # You need to enter the real URL and have the server running
@@ -35,18 +35,17 @@ sample_data = [
 
 
 def add(data):
-    #params = urllib.urlencode(data)
     response = "None"
     try:
-        f = urllib2.urlopen(
-            CODESPEED_URL + 'result/add/json/', urllib.urlencode(data))
-    except urllib2.HTTPError as e:
-        print str(e)
-        print e.read()
+        f = urlopen(
+            CODESPEED_URL + 'result/add/json/', urlencode(data).encode('utf-8'))
+    except HTTPError as e:
+        print(str(e))
+        print(e.read().decode())
         return
-    response = f.read()
+    response = f.read().decode()
     f.close()
-    print "Server (%s) response: %s\n" % (CODESPEED_URL, response)
+    print("Server (%s) response: %s\n" % (CODESPEED_URL, response))
 
 
 if __name__ == "__main__":

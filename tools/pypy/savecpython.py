@@ -1,6 +1,7 @@
-# -*- coding: utf-8 -*-
-import urllib, urllib2
 from datetime import datetime
+from urllib.error import URLError
+from urllib.parse import urlencode
+from urllib.request import urlopen
 
 SPEEDURL = 'http://127.0.0.1:8000/'
 #SPEEDURL = 'http://speed.pypy.org/'
@@ -42,17 +43,17 @@ def save(project, revision, results, options, executable, host, testing=False):
 
 def send(data):
     #save results
-    params = urllib.urlencode(data)
+    params = urlencode(data).encode('utf-8')
     f = None
     response = "None"
     info = str(datetime.today()) + ": Saving result for " + data['executable'] + " revision "
     info += str(data['commitid']) + ", benchmark " + data['benchmark']
     print(info)
     try:
-        f = urllib2.urlopen(SPEEDURL + 'result/add/', params)
-        response = f.read()
+        f = urlopen(SPEEDURL + 'result/add/', params)
+        response = f.read().decode()
         f.close()
-    except urllib2.URLError, e:
+    except URLError as e:
         if hasattr(e, 'reason'):
             response = '\n  We failed to reach a server\n'
             response += '  Reason: ' + str(e.reason)

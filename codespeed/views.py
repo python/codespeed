@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
-
 import json
 import logging
 import os
@@ -74,7 +71,7 @@ class HomeView(TemplateView):
     template_name = "home.html"
 
     def get_context_data(self, **kwargs):
-        context = super(HomeView, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         context['show_reports'] = settings.SHOW_REPORTS
         context['show_historical'] = settings.SHOW_HISTORICAL
         historical_settings = ['SHOW_HISTORICAL', 'DEF_BASELINES', 'DEF_EXECUTABLES']
