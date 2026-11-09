@@ -1,0 +1,145 @@
+/* PR Runner tab. Colours come from the custom properties in main.css, so
+   this follows whatever theme the site is in. */
+
+div#prrunner { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.8em; align-items: start; }
+div#prrunner.with-form { grid-template-columns: minmax(20em, 26em) minmax(0, 1fr); }
+div#prrunner > #pr-flash, div#prrunner > p.back { grid-column: 1 / -1; }
+div#prrunner > #pr-flash:empty { display: none; }
+
+.prcard {
+    padding: 1em 1.2em 1.2em;
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+.prcard h2 { margin: 0 0 0.7em; font-size: 1.1em; font-weight: 600; }
+.prcard p { margin: 0 0 0.8em; line-height: 1.45; }
+.prcard p:last-child { margin-bottom: 0; }
+.prcard code { font-family: var(--font-mono); font-size: 0.9em; }
+.prcard .empty { color: var(--text-muted); }
+div#prrunner p.back { margin: 0; font-size: 0.93em; }
+
+/* Flash messages */
+p.flash {
+    margin: 0 0 0.5em;
+    padding: 0.7em 1em;
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-sm);
+}
+p.flash:last-child { margin-bottom: 0; }
+p.flash-error { border-left-color: var(--status-red); }
+p.flash-success { border-left-color: var(--status-green); }
+
+/* The form */
+#pr-run-form fieldset { margin: 0 0 1.1em; padding: 0; border: 0; min-width: 0; }
+#pr-run-form legend {
+    padding: 0;
+    margin-bottom: 0.4em;
+    font-size: 0.8em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+#pr-run-form select, #pr-run-form input[type="text"] { width: 100%; padding: 0.4em 0.5em; }
+#pr-run-form label.field { display: block; margin-bottom: 0.6em; font-size: 0.93em; }
+#pr-run-form label.option { display: flex; align-items: baseline; gap: 0.45em; margin-top: 0.7em; font-size: 0.93em; cursor: pointer; }
+#pr-run-form label.option input { flex: none; margin: 0; }
+ul.choices { list-style: none; margin: 0; padding: 0; }
+ul.choices li { padding: 0.15em 0; }
+ul.choices label { cursor: pointer; }
+ul.choices input:disabled + *, ul.choices label.unavailable { color: var(--text-faint); cursor: default; }
+ul.choices .choice-note { display: block; margin-left: 1.7em; font-size: 0.87em; color: var(--text-muted); }
+ul.choices.scroll {
+    max-height: 13em;
+    margin-top: 0.4em;
+    padding: 0.3em 0.6em;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.93em;
+}
+div#pr-benchmarks { margin-top: 0.5em; }
+
+#pr-run-form p.hint { margin: 0.4em 0 0; font-size: 0.87em; color: var(--text-muted); }
+
+p.caution {
+    padding: 0.6em 0.8em;
+    font-size: 0.9em;
+    background-color: var(--surface-alt);
+    border-left: 3px solid var(--status-yellow);
+    border-radius: var(--radius-sm);
+}
+
+/* Buttons */
+.primary, a.primary:link, a.primary:visited, button.secondary {
+    display: inline-block;
+    padding: 0.5em 1.1em;
+    font: inherit;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    text-decoration: none;
+}
+.primary, a.primary:link, a.primary:visited { color: var(--surface); background-color: var(--accent); border: 1px solid var(--accent); }
+.primary:hover, a.primary:hover { background-color: var(--accent-hover); border-color: var(--accent-hover); text-decoration: none; }
+.primary:disabled { opacity: 0.45; cursor: not-allowed; }
+button.secondary { color: var(--text); background-color: var(--surface-alt); border: 1px solid var(--border-strong); font-weight: 500; }
+button.secondary:hover { border-color: var(--status-red); }
+
+/* Runs. Not table.tablesorter: that one is set in monospace and
+   right-aligned for columns of numbers, and these are mostly words. */
+table.prtable {
+    width: 100%;
+    font-size: 0.93em;
+    text-align: left;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+table.prtable th {
+    padding: 0.5em 0.8em;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--text-muted);
+    background-color: var(--surface-alt);
+    border-bottom: 1px solid var(--border);
+}
+table.prtable td { padding: 0.45em 0.8em; white-space: nowrap; border-top: 1px solid var(--border); }
+table.prtable tbody tr:first-child td { border-top: 0; }
+/* The benchmarks column takes whatever width is left and truncates to fit,
+   so the table never grows wider than its card */
+table.prtable td.pr-benchmarks-cell { width: 100%; max-width: 0; overflow: hidden; text-overflow: ellipsis; }
+div.table-scroll { overflow-x: auto; }
+table.prtable.runs { min-width: 58em; }
+table.prtable td.number, table.prtable th.number { text-align: right; font-variant-numeric: tabular-nums; }
+table.prtable.comparison { max-width: 46em; }
+.run-status {
+    display: inline-block;
+    padding: 0.1em 0.6em;
+    font-size: 0.87em;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--text-muted);
+    background-color: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 1em;
+}
+.run-status.run-running { color: var(--accent); background-color: var(--accent-soft); border-color: var(--accent); }
+.run-status.run-completed { color: var(--status-green-text); background-color: var(--status-green); border-color: var(--status-green); }
+.run-status.run-failed { color: var(--status-red-text); background-color: var(--status-red); border-color: var(--status-red); }
+.run-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.8em; margin-bottom: 0.7em; }
+.run-head h2 { margin: 0; overflow-wrap: anywhere; }
+.run-head form { margin: 0 0 0 auto; }
+p.run-message { color: var(--text-muted); }
+.prcard table.info { max-width: 60em; margin-bottom: 0; }
+.prcard table.info th.infofirst { width: 9em; white-space: nowrap; }
+
+@media only screen and (max-width: 1005px) {
+    div#prrunner.with-form { grid-template-columns: minmax(0, 1fr); }
+}

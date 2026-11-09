@@ -1,0 +1,87 @@
+{% extends "codespeed/base_site.html" %}
+{% load static %}
+
+{% block title %}{{ block.super }}: PR run {{ run.id }}{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" type="text/css" href="{% static 'css/pr_runner.css' %}" />
+  {# Keep an eye on a run in flight without anyone having to reload #}
+  {% if run.is_active %}<meta http-equiv="refresh" content="30">{% endif %}
+{% endblock %}
+
+{% block nav-pr-runner %}class="current"><a href="{% url "pr-runner" %}">PR Runner</a>{% endblock %}
+
+{% block body %}
+<div id="prrunner">
+  <div id="pr-flash">{% include "codespeed/pr_runner/_messages.html" %}</div>
+
+  <section class="prcard">
+    <div class="run-head">
+      <h2>Run {{ run.id }}: pull request #{{ run.pr_number }}</h2>
+      {% include "codespeed/pr_runner/_status.html" %}
+      {% if can_cancel %}
+      <form method="post" action="{% url 'pr-run-cancel' run.id %}">
+        {% csrf_token %}
+        <button type="submit" class="secondary">Cancel run</button>
+      </form>
+      {% endif %}
+    </div>
+    {% if run.message %}<p class="run-message">{{ run.message }}</p>{% endif %}
+
+    <table class="info">
+      <tbody>
+        <tr><th class="infofirst">Pull request</th><td>{% if repo %}<a href="{{ repo }}/pull/{{ run.pr_number }}">#{{ run.pr_number }}</a>{% else %}#{{ run.pr_number }}{% endif %}</td></tr>
+        <tr><th class="infofirst">Commit</th><td>{% if repo %}<a href="{{ repo }}/commit/{{ run.head_sha }}"><code>{{ run.head_sha }}</code></a>{% else %}<code>{{ run.head_sha }}</code>{% endif %}</td></tr>
+        <tr><th class="infofirst">Compared with</th><td>{% if not run.base_sha %}its merge base on {{ run.base_branch }}, which the runner reports once it has fetched the commits{% else %}{% if repo %}<a href="{{ repo }}/commit/{{ run.base_sha }}"><code>{{ run.base_sha }}</code></a>{% else %}<code>{{ run.base_sha }}</code>{% endif %}, its merge base on {{ run.base_branch }}{% endif %}</td></tr>
+        <tr><th class="infofirst">Environment</th><td>{{ run.runner.environment.name }}</td></tr>
+        <tr><th class="infofirst">Executable</th><td>{{ run.executable.name }}</td></tr>
+        <tr><th class="infofirst">Benchmarks</th><td>{% if run.benchmarks %}{{ run.benchmark_list|join:", " }}{% else %}The whole suite{% endif %}</td></tr>
+        <tr><th class="infofirst">Requested by</th><td>{{ run.requested_by_login }}, {{ run.created_at|date:"Y-m-d H:i e" }}</td></tr>
+        {% if run.started_at %}<tr><th class="infofirst">Started</th><td>{{ run.started_at|date:"Y-m-d H:i e" }}</td></tr>{% endif %}
+        {% if run.finished_at %}<tr><th class="infofirst">Finished</th><td>{{ run.finished_at|date:"Y-m-d H:i e" }}</td></tr>{% endif %}
+        {% if run.log_url %}<tr><th class="infofirst">Log</th><td><a href="{{ run.log_url }}" rel="noopener nofollow">{{ run.log_url }}</a></td></tr>{% endif %}
+        {% if run.comment_url %}<tr><th class="infofirst">Report</th><td><a href="{{ run.comment_url }}">Comment on the pull request</a></td></tr>{% endif %}
+      </tbody>
+    </table>
+  </section>
+
+  {% if comparison %}
+  <section class="prcard">
+    <h2>Results</h2>
+    {% if comparison.rows %}
+    <p class="run-summary">
+      Geometric mean: <strong>{{ comparison.geomean_text }}</strong> across
+      {{ comparison.rows|length }} benchmark{{ comparison.rows|length|pluralize }}.
+      {{ comparison.faster }} faster, {{ comparison.slower }} slower,
+      {{ comparison.unchanged }} within {{ comparison.threshold|floatformat }}%.
+    </p>
+    <table class="prtable comparison">
+      <thead><tr><th>Benchmark</th><th class="number">Base</th><th class="number">Pull request</th><th>Change</th></tr></thead>
+      <tbody>
+        {% for row in comparison.rows %}
+        <tr>
+          <td>{{ row.name }}</td>
+          <td class="number">{{ row.base_text }}</td>
+          <td class="number">{{ row.head_text }}</td>
+          <td class="{% if row.significant %}{% if row.better %}status-green{% else %}status-red{% endif %}{% endif %}" title="{{ row.change|floatformat:2 }}%">{{ row.speedup_text }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty">The pull request's results are in, but the base commit has none to compare them with.</p>
+    {% endif %}
+    {% if comparison.missing %}
+    <p class="empty">No base result for: {{ comparison.missing|join:", " }}.</p>
+    {% endif %}
+  </section>
+  {% elif run.is_active %}
+  <section class="prcard">
+    <h2>Results</h2>
+    <p class="empty">Results appear here as the runner uploads them.</p>
+  </section>
+  {% endif %}
+
+  <p class="back"><a href="{% url 'pr-runner' %}">All runs</a></p>
+</div>
+{% endblock body %}

@@ -1,0 +1,13 @@
+{% extends "codespeed/base_site.html" %}
+
+{% block title %}{{ block.super }}: Sign in{% endblock %}
+
+{% block navigation %}{% endblock %}
+
+{% block body %}
+<div class="about_content">
+  <h2>Could not sign you in</h2>
+  <p>{{ message }}</p>
+  <p><a href="{% url 'home' %}">Back to the home page</a></p>
+</div>
+{% endblock %}

@@ -1,6 +1,8 @@
+import hashlib
 import logging
 import os
 import json
+import secrets
 
 from django.core.exceptions import ValidationError
 from django.urls import reverse
@@ -593,3 +595,168 @@ class Report(models.Model):
     def _tablecache_is_stale(cached):
         return any('bench_source' not in row
                    for units in cached for row in units.get('rows', []))
+
+
+class GitHubAccount(models.Model):
+    """Links a Django user to the GitHub account they signed in with.
+
+    Keyed on GitHub's numeric id, which survives renames. ``verified_at`` is
+    the last time the allowed-team check passed; privileged actions require
+    it to be recent (see ``GITHUB_LOGIN_RECHECK_SECONDS``).
+    """
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='github_account')
+    github_id = models.BigIntegerField(unique=True)
+    login = models.CharField(max_length=39)
+    name = models.CharField(max_length=255, blank=True)
+    avatar_url = models.URLField(blank=True)
+    verified_at = models.DateTimeField()
+
+    def __str__(self):
+        return self.login
+
+
+class PRRunner(models.Model):
+    """A benchmark machine that accepts on-demand runs for pull requests.
+
+    One per Environment, because in Codespeed the environment *is* the
+    machine. The machine authenticates with a token of its own, so a single
+    runner can be cut off without touching the others. Only the hash of the
+    token is stored.
+    """
+    AGENT = 'agent'
+    GITHUB_ACTIONS = 'gha'
+    BACKENDS = (
+        (AGENT, 'Agent polls for work'),
+        (GITHUB_ACTIONS, 'Woken through a GitHub Actions workflow'),
+    )
+
+    environment = models.OneToOneField(
+        Environment, on_delete=models.CASCADE, related_name='pr_runner')
+    executables = models.ManyToManyField(
+        Executable, related_name='pr_runners',
+        help_text="Builds this machine knows how to produce")
+    enabled = models.BooleanField(
+        default=True, help_text="Untick to stop offering this machine")
+    notes = models.CharField(
+        max_length=200, blank=True,
+        help_text="Shown next to the environment when starting a run")
+    token_hash = models.CharField(
+        max_length=64, unique=True, null=True, blank=True, editable=False)
+    last_seen = models.DateTimeField(null=True, blank=True, editable=False)
+
+    backend = models.CharField(
+        max_length=10, choices=BACKENDS, default=AGENT,
+        help_text="How the machine learns that a run is waiting")
+    workflow_repo = models.CharField(
+        max_length=100, blank=True,
+        help_text="GitHub Actions only: 'owner/name' of the repository "
+                  "holding the workflow")
+    workflow_file = models.CharField(
+        max_length=100, blank=True, default='benchmark-pr.yml')
+    workflow_ref = models.CharField(max_length=100, blank=True, default='main')
+
+    class Meta:
+        verbose_name = "PR runner"
+
+    def __str__(self):
+        return self.environment.name
+
+    @staticmethod
+    def hash_token(token):
+        return hashlib.sha256(token.encode()).hexdigest()
+
+    def new_token(self):
+        """Replace the token and return the new one; this is the only time
+        it exists in the clear."""
+        token = secrets.token_urlsafe(32)
+        self.token_hash = self.hash_token(token)
+        return token
+
+    @classmethod
+    def for_token(cls, token):
+        if not token:
+            return None
+        return cls.objects.filter(
+            token_hash=cls.hash_token(token), enabled=True
+        ).select_related('environment').first()
+
+
+class PRRun(models.Model):
+    """One request to benchmark a pull request on one runner.
+
+    ``head_sha`` is pinned when the request is made, so a later push to the
+    pull request does not change what runs. ``base_sha``, the merge base
+    with the target branch, is worked out by the runner from its clone and
+    reported back before it builds anything.
+    """
+    QUEUED = 'queued'
+    RUNNING = 'running'
+    COMPLETED = 'completed'
+    FAILED = 'failed'
+    CANCELLED = 'cancelled'
+    STATUSES = (
+        (QUEUED, 'Queued'),
+        (RUNNING, 'Running'),
+        (COMPLETED, 'Completed'),
+        (FAILED, 'Failed'),
+        (CANCELLED, 'Cancelled'),
+    )
+    ACTIVE = (QUEUED, RUNNING)
+
+    runner = models.ForeignKey(
+        PRRunner, on_delete=models.CASCADE, related_name='runs')
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name='pr_runs')
+    executable = models.ForeignKey(
+        Executable, on_delete=models.CASCADE, related_name='pr_runs')
+
+    pr_number = models.PositiveIntegerField()
+    head_sha = models.CharField(max_length=40)
+    base_sha = models.CharField(max_length=40, blank=True)
+    base_branch = models.CharField(max_length=32)
+    benchmarks = models.TextField(
+        blank=True, help_text="Comma-separated names; empty runs the suite")
+    reuse_base = models.BooleanField(default=True)
+
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
+        blank=True, related_name='pr_runs')
+    # Kept as text too, so the audit trail outlives the user row
+    requested_by_login = models.CharField(max_length=150)
+
+    status = models.CharField(
+        max_length=10, choices=STATUSES, default=QUEUED, db_index=True)
+    message = models.CharField(max_length=500, blank=True)
+    log_url = models.URLField(blank=True)
+    comment_url = models.URLField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    heartbeat_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-id']
+        verbose_name = "PR run"
+
+    def __str__(self):
+        return "#%d %s on %s" % (
+            self.pr_number, self.head_sha[:7], self.runner)
+
+    def get_absolute_url(self):
+        return reverse('pr-run', args=[self.pk])
+
+    @property
+    def head_branch(self):
+        """The Codespeed branch the pull request's results are filed under."""
+        return 'pr-%d' % self.pr_number
+
+    @property
+    def is_active(self):
+        return self.status in self.ACTIVE
+
+    @property
+    def benchmark_list(self):
+        return [b for b in self.benchmarks.split(',') if b]

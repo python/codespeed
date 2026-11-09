@@ -24,6 +24,20 @@ def is_authenticated(request):
         return False
 
 
+def may_post_results(user):
+    """Whether a signed-in user may post results.
+
+    Any local account may. People who signed in with GitHub get an
+    account for the PR runner.
+    """
+    from .models import GitHubAccount
+
+    pk = getattr(user, 'pk', None)
+    if isinstance(pk, int) and GitHubAccount.objects.filter(user_id=pk).exists():
+        return user.has_perm('codespeed.add_result')
+    return True
+
+
 def basic_auth_required(realm='default'):
     def _helper(func):
         @wraps(func)
@@ -33,7 +47,9 @@ def basic_auth_required(realm='default'):
             if settings.ALLOW_ANONYMOUS_POST:
                 logger.debug('allowing anonymous post')
                 allowed = True
-            elif hasattr(request, 'user') and is_authenticated(request=request):
+            elif (hasattr(request, 'user') and
+                    is_authenticated(request=request) and
+                    may_post_results(request.user)):
                 allowed = True
             elif 'HTTP_AUTHORIZATION' in request.META:
                 logger.debug('checking for http authorization header')
@@ -44,7 +60,8 @@ def basic_auth_required(realm='default'):
                 if authmeth.lower() == 'basic':
                     username, password = decode_basic_auth(auth)
                     user = authenticate(username=username, password=password)
-                    if user is not None and user.is_active:
+                    if (user is not None and user.is_active and
+                            may_post_results(user)):
                         logger.info(
                             'Authentication succeeded for {}'.format(username))
                         login(request, user)

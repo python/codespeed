@@ -1,4 +1,4 @@
-{% load static %}
+{% load static account pr_runner %}
 <!DOCTYPE html>
 <html>
   <head>
@@ -29,6 +29,7 @@
             <ul id="links" class="inline">
                 <li><a href="{% url 'home' %}">Home</a></li><li><a href="{% url 'about' %}">About</a></li>
             </ul>
+            {% account_widget %}
           {% endblock top_nav %}
         {% endblock page_header %}
       </div>
@@ -40,6 +41,7 @@
   <li {% block nav-changes %}><a href=" {% url "changes" %}">Changes</a>{% endblock %}</li>
   <li {% block nav-timeline %}><a href=" {% url "timeline" %}">Timeline</a>{% endblock %}</li>
   <li {% block nav-comparison %}><a href=" {% url "comparison" %}">Comparison</a>{% endblock %}</li>
+  {% pr_runner_enabled as show_pr_runner %}{% if show_pr_runner %}<li {% block nav-pr-runner %}><a href="{% url "pr-runner" %}">PR Runner</a>{% endblock %}</li>{% endif %}
 </ul>
 {% endblock %}
 </div>
