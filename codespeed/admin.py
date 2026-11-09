@@ -1,8 +1,9 @@
 from django import forms
-from django.contrib import admin
+from django.contrib import admin, messages
 
 from codespeed.models import (Project, Revision, Executable, Benchmark, Branch,
-                              Result, Environment, Report)
+                              Result, Environment, Report, GitHubAccount,
+                              PRRun, PRRunner)
 
 
 class ProjectForm(forms.ModelForm):
@@ -109,3 +110,70 @@ class ReportAdmin(admin.ModelAdmin):
     list_filter = ('environment', 'executable')
     ordering = ['-revision']
     actions = [recalculate_report]
+
+
+@admin.register(GitHubAccount)
+class GitHubAccountAdmin(admin.ModelAdmin):
+    """Read-only: these rows mirror GitHub and are rewritten at each sign-in."""
+    list_display = ('login', 'name', 'github_id', 'user', 'verified_at')
+    search_fields = ('login', 'name')
+    readonly_fields = ('user', 'github_id', 'login', 'name', 'avatar_url',
+                       'verified_at')
+
+    def has_add_permission(self, request):
+        return False
+
+
+@admin.register(PRRunner)
+class PRRunnerAdmin(admin.ModelAdmin):
+    list_display = ('environment', 'enabled', 'backend', 'has_token',
+                    'last_seen')
+    list_filter = ('enabled', 'backend')
+    filter_horizontal = ('executables',)
+    readonly_fields = ('last_seen',)
+    actions = ['issue_token']
+    fieldsets = (
+        (None, {'fields': ('environment', 'executables', 'enabled', 'notes',
+                           'last_seen')}),
+        ('How the machine is told about work', {
+            'fields': ('backend', 'workflow_repo', 'workflow_file',
+                       'workflow_ref'),
+        }),
+    )
+
+    @admin.display(boolean=True, description='Token issued')
+    def has_token(self, obj):
+        return bool(obj.token_hash)
+
+    def save_model(self, request, obj, form, change):
+        token = None if obj.token_hash else obj.new_token()
+        super().save_model(request, obj, form, change)
+        if token:
+            self._show_token(request, obj, token)
+
+    @admin.action(description='Issue a new token (the old one stops working)')
+    def issue_token(self, request, queryset):
+        for runner in queryset:
+            token = runner.new_token()
+            runner.save(update_fields=['token_hash'])
+            self._show_token(request, runner, token)
+
+    def _show_token(self, request, runner, token):
+        # Only the hash is kept, so this message is the one chance to copy it
+        messages.warning(
+            request, 'Token for %s: %s (copy it now; it is not stored and '
+                     'cannot be shown again)' % (runner, token))
+
+
+@admin.register(PRRun)
+class PRRunAdmin(admin.ModelAdmin):
+    """An audit trail; runs are made from the PR Runner tab, not here."""
+    list_display = ('id', 'pr_number', 'head_sha', 'runner', 'executable',
+                    'status', 'requested_by_login', 'created_at')
+    list_filter = ('status', 'runner', 'project')
+    search_fields = ('pr_number', 'head_sha', 'requested_by_login')
+    raw_id_fields = ('requested_by',)
+    date_hierarchy = 'created_at'
+
+    def has_add_permission(self, request):
+        return False

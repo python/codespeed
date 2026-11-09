@@ -1,6 +1,6 @@
-from django.urls import re_path
+from django.urls import include, re_path
 
-from codespeed import views
+from codespeed import github_auth, views
 from codespeed.feeds import LatestEntries, LatestSignificantEntries
 
 urlpatterns = [
@@ -29,4 +29,18 @@ urlpatterns += [
     # URLs for adding results
     re_path(r'^result/add/json/$', views.add_json_results, name='add-json-results'),
     re_path(r'^result/add/$', views.add_result, name='add-result'),
+]
+
+urlpatterns += [
+    # Sign in with GitHub
+    re_path(r'^accounts/github/login/$', github_auth.github_login,
+            name='github-login'),
+    re_path(r'^accounts/github/callback/$', github_auth.github_callback,
+            name='github-callback'),
+    re_path(r'^accounts/logout/$', github_auth.sign_out, name='sign-out'),
+]
+
+urlpatterns += [
+    # Benchmarking pull requests on demand; 404s unless PR_RUNNER_ENABLED
+    re_path(r'^', include('codespeed.pr_runner.urls')),
 ]

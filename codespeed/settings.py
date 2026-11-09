@@ -111,3 +111,38 @@ US_TZ_AWARE_DATES = False  # True to use timezone aware datetime objects with Gi
 GITHUB_OAUTH_TOKEN = None  # Github oAuth token to use when using Github repo type. If not
                            # specified, it will utilize unauthenticated requests which have
                            # low rate limits.
+
+## GitHub sign-in ##
+# Register an OAuth app (or a GitHub App) whose callback URL is
+# https://<site>/accounts/github/callback/ and put its credentials in your
+# local settings. The "Sign in with GitHub" button only appears once both
+# are set.
+GITHUB_LOGIN_CLIENT_ID = None
+GITHUB_LOGIN_CLIENT_SECRET = None
+
+GITHUB_LOGIN_ALLOWED_TEAMS = []  # Teams whose members may sign in, as
+                                 # 'org/team-slug'.
+                                 # Example: ['python/python-core']
+
+GITHUB_LOGIN_ALLOWED_USERS = []  # GitHub logins allowed regardless of team
+
+GITHUB_LOGIN_RECHECK_SECONDS = 24 * 60 * 60  # How long a passed membership
+                                             # check is trusted before the
+                                             # user must sign in again
+
+## PR runner ##
+PR_RUNNER_ENABLED = False  # Show the "PR Runner" tab, where signed-in users
+                           # queue benchmark runs for pull requests
+
+PR_RUNNER_GITHUB_TOKEN = None  # Token used to post the report comment on the
+                               # pull request and to trigger workflows. Without
+                               # it no comment is posted. Finding pull requests
+                               # needs no token: `git ls-remote` does that.
+
+PR_RUNNER_COMMENT = True  # Post the comparison to the pull request when a run
+                          # completes
+
+PR_RUNNER_MAX_ACTIVE_PER_USER = 4  # Queued or running runs one person may have
+
+PR_RUNNER_STALE_SECONDS = 30 * 60  # A running job whose runner has been silent
+                                   # this long is marked as failed

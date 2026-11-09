@@ -48,9 +48,11 @@ def fetch_json(url):
         try:
             json_obj = json.load(urlopen(request))
         except IOError as e:
-            logger.exception("Unable to load %s: %s",
-                             url, e, exc_info=True)
-            raise e
+            # Rate limits, and such things. CommitLogError lets a
+            # result upload go through without the commit's metadata rather
+            # than fail with a 500.
+            logger.warning("Unable to load %s: %s", url, e)
+            raise CommitLogError("Unable to load %s: %s" % (url, e)) from e
 
         if "message" in json_obj and \
            json_obj["message"] in ("Not Found", "Server Error",):

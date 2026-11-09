@@ -129,4 +129,14 @@ HOME_GEOMEAN_SERIES = [
      'environment': 'ampere-one'},
 ]
 
+# Who may sign in with GitHub. The OAuth app's GITHUB_LOGIN_CLIENT_ID and
+# GITHUB_LOGIN_CLIENT_SECRET belong in local_settings.py; until they are set
+# there is no sign-in button.
+GITHUB_LOGIN_ALLOWED_TEAMS = ['python/python-core', 'python/python-triage']
+
+# The "PR Runner" tab. It lists no environments until a benchmark machine is
+# registered under "PR runners" in the admin. PR_RUNNER_GITHUB_TOKEN, used to
+# post the report comment, belongs in local_settings.py as well.
+PR_RUNNER_ENABLED = True
+
 from .local_settings import *

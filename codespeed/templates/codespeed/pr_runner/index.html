@@ -1,0 +1,141 @@
+{% extends "codespeed/base_site.html" %}
+{% load static pr_runner %}
+
+{% block title %}{{ block.super }}: PR Runner{% endblock %}
+{% block description %}Benchmark a pull request on demand and compare it with its base{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" type="text/css" href="{% static 'css/pr_runner.css' %}" />
+{% endblock %}
+
+{% block nav-pr-runner %}class="current"><a href="{% url "pr-runner" %}">PR Runner</a>{% endblock %}
+
+{% block body %}
+<div id="prrunner"{% if can_start %} class="with-form"{% endif %}>
+  <div id="pr-flash">{% include "codespeed/pr_runner/_messages.html" %}</div>
+
+  <section id="pr-new" class="prcard">
+    <h2>Benchmark a pull request</h2>
+    {% if can_start %}
+    <form id="pr-run-form" method="post" action="{% url 'pr-run-create' %}">
+      {% csrf_token %}
+
+      <fieldset>
+        <legend>Pull request</legend>
+        {% if projects|length > 1 %}
+        <label class="field">Project
+          <select name="project">
+            {% for project in projects %}<option value="{{ project.id }}">{{ project.name }}</option>{% endfor %}
+          </select>
+        </label>
+        {% else %}
+          {% for project in projects %}<input type="hidden" name="project" value="{{ project.id }}">{% endfor %}
+        {% endif %}
+        {% if projects %}
+        <input type="text" name="pull_request" id="pr-number" autocomplete="off" spellcheck="false"
+               inputmode="numeric" placeholder="Number or URL" aria-label="Pull request number">
+        <p class="hint">The pull request must be open and target the main branch.</p>
+        {% else %}
+        <p class="empty">No project here is hosted on GitHub, so there are no pull requests to benchmark.</p>
+        {% endif %}
+      </fieldset>
+
+      <fieldset>
+        <legend>Environments</legend>
+        {% if runners %}
+        <ul class="choices" id="pr-runners">
+          {% for item in runners %}
+          <li>
+            <label title="{{ item.runner.environment.os }}, {{ item.runner.environment.cpu }}">
+              <input type="checkbox" name="runner" value="{{ item.runner.id }}" data-executables="{{ item.executables }}">
+              {{ item.runner.environment.name }}
+            </label>
+            {% if item.runner.notes %}<span class="choice-note">{{ item.runner.notes }}</span>{% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="empty" id="pr-no-runners">No environments accept pull request runs yet. Once a benchmark machine is registered as a runner it will be listed here.</p>
+        {% endif %}
+      </fieldset>
+
+      {% if runners %}
+      <fieldset>
+        <legend>Executable</legend>
+        <select name="executable" aria-label="Executable">
+          {% for exe in executables %}<option value="{{ exe.id }}" data-project="{{ exe.project_id }}" title="{{ exe.description }}">{{ exe.name }}</option>{% endfor %}
+        </select>
+      </fieldset>
+
+      <fieldset>
+        <legend>Benchmarks</legend>
+        <ul class="choices">
+          <li><label><input type="radio" name="suite" value="full" checked> The whole suite</label></li>
+          <li><label><input type="radio" name="suite" value="subset"> Only some of it</label></li>
+        </ul>
+        <div id="pr-benchmarks" hidden>
+          <input type="text" id="pr-benchmark-filter" placeholder="Filter" aria-label="Filter benchmarks" autocomplete="off">
+          <ul class="choices scroll">
+            {% for name in benchmarks %}<li><label><input type="checkbox" name="benchmark" value="{{ name }}"> {{ name }}</label></li>
+            {% endfor %}
+          </ul>
+        </div>
+        <label class="option"><input type="checkbox" name="reuse_base" value="1" checked>
+          Reuse the base commit's results if it was already benchmarked</label>
+      </fieldset>
+
+      <p class="caution">The pull request's code is built and run on the machines you choose. Read the changes first, as you would before merging.</p>
+      <button type="submit" id="pr-submit" class="primary" disabled>Start run</button>
+      {% endif %}
+    </form>
+    {% elif refusal == 'stale' %}
+      <p>Your team membership was last checked a while ago. Sign in again to start runs.</p>
+      {% if login_enabled %}<p><a class="primary" href="{% url 'github-login' %}?next={{ request.path|urlencode:'' }}">Sign in with GitHub</a></p>{% endif %}
+    {% elif refusal == 'forbidden' %}
+      <p>This account may not start runs.</p>
+    {% else %}
+      <p>Members of the project's teams can have a pull request built and benchmarked on the machines behind this site, and compared with the commit it branched from.</p>
+      {% if login_enabled %}
+      <p><a class="primary" href="{% url 'github-login' %}?next={{ request.path|urlencode:'' }}">Sign in with GitHub</a></p>
+      {% else %}
+      <p class="empty">Sign-in is not set up on this site yet.</p>
+      {% endif %}
+    {% endif %}
+  </section>
+
+  <section id="pr-runs" class="prcard">
+    <h2>Recent runs</h2>
+    {% if runs %}
+    <div class="table-scroll">
+    <table class="prtable runs">
+      <thead>
+        <tr><th>Run</th><th>Pull request</th><th>Commit</th><th>Environment</th><th>Executable</th><th>Benchmarks</th><th>Requested by</th><th>Status</th><th>Queued</th></tr>
+      </thead>
+      <tbody>
+        {% for run in runs %}
+        <tr>
+          <td><a href="{{ run.get_absolute_url }}">{{ run.id }}</a></td>
+          <td><a href="{{ run.get_absolute_url }}">#{{ run.pr_number }}</a></td>
+          <td><code>{{ run.head_sha|slice:":7" }}</code></td>
+          <td>{{ run.runner.environment.name }}</td>
+          <td>{{ run.executable.name }}</td>
+          <td class="pr-benchmarks-cell" title="{{ run.benchmarks }}">{% if run.benchmarks %}{{ run.benchmark_list|join:", " }}{% else %}all{% endif %}</td>
+          <td>{{ run.requested_by_login }}</td>
+          <td title="{{ run.message }}">{% include "codespeed/pr_runner/_status.html" %}</td>
+          <td title="{{ run.created_at|date:'c' }}">{{ run.created_at|ago }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p class="empty">No pull request has been benchmarked yet.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock body %}
+
+{% block extra_script %}
+{{ block.super }}
+{% if can_start %}<script type="text/javascript" src="{% static 'js/pr_runner.js' %}"></script>{% endif %}
+{% endblock %}

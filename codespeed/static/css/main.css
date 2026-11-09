@@ -110,6 +110,44 @@ ul#links li a:hover, ul#links li a:focus {
     text-decoration: none;
 }
 
+/* Sign-in button and signed-in user, at the right edge of the header */
+div#account {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    margin-left: 0.4em;
+    padding-left: 0.9em;
+    border-left: 1px solid var(--border);
+    font-size: 0.95em;
+    white-space: nowrap;
+}
+div#account form { margin: 0; }
+div#account img.avatar { height: 24px; width: 24px; border-radius: 50%; }
+div#account .account-name { color: var(--text); font-weight: 500; }
+div#title a.github-signin {
+    gap: 0.45em;
+    padding: 0.35em 0.75em;
+    color: var(--text);
+    font-weight: 500;
+    background-color: var(--surface-alt);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+}
+div#title a.github-signin:hover, div#title a.github-signin:focus {
+    border-color: var(--accent);
+    text-decoration: none;
+}
+button.linkbutton {
+    padding: 0;
+    font: inherit;
+    color: var(--text-muted);
+    background: none;
+    border: 0;
+    cursor: pointer;
+}
+button.linkbutton:hover, button.linkbutton:focus { color: var(--accent); text-decoration: underline; }
+
 div#wrapper { margin: 0; }
 
 /* Section tabs */
