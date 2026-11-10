@@ -47,10 +47,15 @@
         }
 
         var labels = ['Date'].concat(series.map(function(s) { return s.label; }));
+        var theme = Theme.dygraphOptions();
 
-        new Dygraph(container, rows, {
+        var graph = new Dygraph(container, rows, {
             labels: labels,
             colors: COLORS.slice(0, series.length),
+            axisLineColor: theme.axisLineColor,
+            gridLineColor: theme.gridLineColor,
+            gridLineWidth: theme.gridLineWidth,
+            highlightSeriesBackgroundColor: theme.highlightSeriesBackgroundColor,
             connectSeparatedPoints: true,
             drawPoints: true,
             pointSize: 2,
@@ -80,6 +85,7 @@
                     '&exe=' + s.executable + '&env=' + s.environment;
             }
         });
+        Theme.onChange(function() { graph.updateOptions(Theme.dygraphOptions()); });
     }
 
     document.addEventListener('DOMContentLoaded', function() {

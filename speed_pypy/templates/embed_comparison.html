@@ -7,6 +7,11 @@
   <title>PyPy vs CPython benchmark comparison</title>
   <style>
     html, body { margin: 0; padding: 0; background: transparent; height: 100%; overflow: hidden; }
+    /* The chart colours from main.css, since this page is served on its own. The
+       color-scheme must match the embedding page's or the browser paints the
+       iframe opaque instead of transparent. */
+    :root { color-scheme: light; --chart-text: #636c76; --chart-grid: rgba(0, 0, 0, 0.1); }
+    :root[data-theme="dark"] { color-scheme: dark; --chart-text: #9ea7b3; --chart-grid: rgba(255, 255, 255, 0.12); }
     /* Fill the embedding iframe so the rotated benchmark labels are never
        clipped: the host page controls the height via the iframe. */
     #baseline-comparison-plot {
@@ -14,6 +19,7 @@
       width: 100%;
       height: 100vh;
       font-family: sans-serif;
+      color: var(--chart-text);
     }
   </style>
 </head>
@@ -26,6 +32,34 @@
     Chart.Tooltip.positioners.cursor = function(_items, eventPosition) {
         return {x: eventPosition.x, y: eventPosition.y};
     };
+
+    // Colour theme, ?theme=light|dark set by the embedding page wins, then the
+    // theme of a same-origin parent, else light.
+    var comparisonChart = null;
+    function resolveTheme() {
+        var fromQuery = /[?&]theme=(light|dark)(&|$)/.exec(window.location.search);
+        if (fromQuery) { return fromQuery[1]; }
+        try {
+            if (window.parent !== window) {
+                var parentTheme = window.parent.document.documentElement.getAttribute('data-theme');
+                return parentTheme === 'dark' ? 'dark' : 'light';
+            }
+        } catch (e) { /* cross-origin parent */ }
+        return 'light';
+    }
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        var style = getComputedStyle(document.documentElement);
+        Chart.defaults.color = style.getPropertyValue('--chart-text').trim();
+        Chart.defaults.borderColor = style.getPropertyValue('--chart-grid').trim();
+        if (comparisonChart) { comparisonChart.update(); }
+    }
+    window.addEventListener('message', function(e) {
+        if (e.origin === window.location.origin && e.data && e.data.codespeedTheme) {
+            applyTheme(e.data.codespeedTheme);
+        }
+    });
+    applyTheme(resolveTheme());
 
     function renderplot(data) {
         var wrap = document.getElementById('baseline-comparison-plot');
@@ -65,7 +99,7 @@
 
         var canvas1 = document.createElement('canvas');
         wrap.appendChild(canvas1);
-        new Chart(canvas1, {
+        comparisonChart = new Chart(canvas1, {
             type: 'bar',
             data: {
                 labels: benchmarks,

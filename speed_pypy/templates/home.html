@@ -68,6 +68,24 @@
         return {x: eventPosition.x, y: eventPosition.y};
     };
 
+    // Chart.js draws its own axis text and grid lines, so hand it the theme colours
+    var historicalChart = null;
+    function applyChartTheme() {
+        var colors = Theme.chartColors();
+        Chart.defaults.color = colors.text;
+        Chart.defaults.borderColor = colors.grid;
+    }
+    applyChartTheme();
+    Theme.onChange(function(theme) {
+        applyChartTheme();
+        if (historicalChart) { historicalChart.update(); }
+        // Plot 1 lives in the iframe, which cannot see this page's theme change
+        var frame = document.querySelector('#historical iframe');
+        if (frame && frame.contentWindow) {
+            frame.contentWindow.postMessage({codespeedTheme: theme}, window.location.origin);
+        }
+    });
+
     function renderplot(data) {
         if (data === null || data.length === 0) {
             $("#historical-plot").html(getLoadText('Error retrieving data', 0));
@@ -140,7 +158,7 @@
         var wrap2 = document.getElementById('historical-plot');
         var canvas2 = document.createElement('canvas');
         wrap2.appendChild(canvas2);
-        new Chart(canvas2, {
+        historicalChart = new Chart(canvas2, {
             type: 'bar',
             data: {
                 labels: ticks2,

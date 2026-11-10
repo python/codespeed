@@ -13,7 +13,7 @@
   top: 0px;
   right: 2px;
   */
-  background: white;
+  background: var(--surface, white);
   line-height: normal;
   text-align: left;
   overflow: hidden;
@@ -63,8 +63,8 @@
 /* This class only applies to annotations without icons */
 /* Old class name: .dygraphDefaultAnnotation */
 .dygraph-default-annotation {
-  border: 1px solid black;
-  background-color: white;
+  border: 1px solid var(--text, black);
+  background-color: var(--surface, white);
   text-align: center;
 }
 
@@ -74,7 +74,7 @@
   z-index: 10;
   line-height: normal;
   overflow: hidden;
-  color: black;  /* replaces old axisLabelColor option */
+  color: var(--chart-text, black);  /* replaces old axisLabelColor option */
 }
 
 .dygraph-axis-label-x {

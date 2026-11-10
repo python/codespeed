@@ -6,7 +6,10 @@
  * Visual values live in the custom properties below; change the look there.
  */
 
+/* Light theme. */
 :root {
+    color-scheme: light;
+
     --font-sans: "Fira Sans", Helvetica, Arial, sans-serif;
     --font-mono: "Menlo", "ProFont", "Inconsolata", "Lucida Sans Console", monospace;
 
@@ -23,7 +26,9 @@
     --accent: #2563eb;
     --accent-hover: #1d4ed8;
     --accent-soft: #e8efff;
+    --warning: #d9480f;
 
+    /* Changes table cells: background and the text on it */
     --status-red: #FF5640;
     --status-red-text: #1f2328;
     --status-green: #9FD54D;
@@ -32,12 +37,67 @@
     --status-lightgreen-text: #1f2328;
     --status-yellow: #FFD843;
     --status-yellow-text: #1f2328;
+    /* Home page report summaries: coloured text on the card */
+    --summary-red: #FF5640;
+    --summary-green: #5c9a1b;
+    --summary-lightgreen: #8bb000;
+    --summary-yellow: #c9a000;
+
+    /* Read by the chart scripts (Theme.chartColors in codespeed.js) for the
+       parts of a canvas chart the stylesheet cannot reach */
+    --chart-text: #636c76;
+    --chart-grid: rgba(0, 0, 0, 0.1);
 
     --radius: 8px;
     --radius-sm: 4px;
     --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.08);
+    --shadow-raised: 0 6px 16px rgba(16, 24, 40, 0.12);
+    --tooltip-bg: rgba(255, 255, 255, 0.96);
+    /* The home page thumbnails are screenshots of the light theme */
+    --thumb-filter: none;
     --sidebar-width: 14em;
     --gap: 1em;
+}
+
+/* Dark theme. */
+:root[data-theme="dark"] {
+    color-scheme: dark;
+
+    --page-bg: #0d1117;
+    --surface: #161b22;
+    --surface-alt: #1f242c;
+    --border: #30363d;
+    --border-strong: #484f58;
+
+    --text: #e6edf3;
+    --text-muted: #9ea7b3;
+    --text-faint: #7d8590;
+
+    --accent: #58a6ff;
+    --accent-hover: #79c0ff;
+    --accent-soft: #1b2d4a;
+    --warning: #f0883e;
+
+    --status-red: #9f2f24;
+    --status-red-text: #fbe3e0;
+    --status-green: #3b7a28;
+    --status-green-text: #e6f4de;
+    --status-lightgreen: #5f8a1e;
+    --status-lightgreen-text: #eef7da;
+    --status-yellow: #96760e;
+    --status-yellow-text: #fcf2d0;
+    --summary-red: #ff7b72;
+    --summary-green: #7ccf5a;
+    --summary-lightgreen: #b8e04c;
+    --summary-yellow: #e3b341;
+
+    --chart-text: #9ea7b3;
+    --chart-grid: rgba(255, 255, 255, 0.12);
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.5);
+    --shadow-raised: 0 6px 16px rgba(0, 0, 0, 0.55);
+    --tooltip-bg: rgba(22, 27, 34, 0.97);
+    --thumb-filter: invert(0.88) hue-rotate(180deg);
 }
 
 /* Global styles */
@@ -109,6 +169,34 @@ ul#links li a:hover, ul#links li a:focus {
     background-color: var(--surface-alt);
     text-decoration: none;
 }
+
+/* Theme toggle: shows the icon of the theme a click switches to */
+button#theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2em;
+    height: 2em;
+    margin-left: 0.25em;
+    padding: 0;
+    color: var(--text-muted);
+    background: none;
+    border: 0;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+button#theme-toggle:hover, button#theme-toggle:focus-visible {
+    color: var(--text);
+    background-color: var(--surface-alt);
+}
+button#theme-toggle svg { width: 1.1em; height: 1.1em; }
+button#theme-toggle .icon-sun,
+:root[data-theme="dark"] button#theme-toggle .icon-moon { display: none; }
+:root[data-theme="dark"] button#theme-toggle .icon-sun { display: block; }
+
+/* A site can ship a second logo for the dark theme (see base_site.html) */
+:root[data-theme="dark"] div#title img.logo-light,
+:root:not([data-theme="dark"]) div#title img.logo-dark { display: none; }
 
 div#wrapper { margin: 0; }
 
@@ -189,25 +277,36 @@ div#presentation div.menubox {
 }
 div#presentation div.menubox:hover {
     border-color: var(--accent);
-    box-shadow: 0 6px 16px rgba(16, 24, 40, 0.12);
+    box-shadow: var(--shadow-raised);
     transform: translateY(-2px);
 }
 div#presentation div.menubox h2 { font-size: 1.1em; font-weight: 600; }
 div#presentation div.menubox p { color: var(--text-muted); }
 
-/* The three icons differ in size (98 to 147px wide); scale them to one height */
+/* The thumbnail sits in a pseudo-element so the dark theme can filter it
+   without touching the text */
 div#presentation div.menubox p {
+    position: relative;
     min-height: 4.6em;
     margin: 0.6em 0 0;
     padding-left: 122px;
     text-align: left;
-    background-repeat: no-repeat;
-    background-position: 0 0.2em;
-    background-size: auto 65px;
 }
-div#presentation div#changes p { background-image: url(../images/changes.png); }
-div#presentation div#timeline p { background-image: url(../images/timeline.png); }
-div#presentation div#comparison p { background-image: url(../images/comparison.png); }
+div#presentation div.menubox p::before {
+    content: '';
+    position: absolute;
+    top: 0.2em;
+    left: 0;
+    width: 122px;
+    height: 65px;
+    background-repeat: no-repeat;
+    background-position: 0 0;
+    background-size: auto 65px;
+    filter: var(--thumb-filter);
+}
+div#presentation div#changes p::before { background-image: url(../images/changes.png); }
+div#presentation div#timeline p::before { background-image: url(../images/timeline.png); }
+div#presentation div#comparison p::before { background-image: url(../images/comparison.png); }
 
 
 /* Sidebar and content columns */
@@ -364,11 +463,20 @@ table.tablesorter thead tr th {
     border-right: 1px solid var(--border);
 }
 table.tablesorter thead tr th:last-child { border-right: 0; }
-table.tablesorter thead tr th.header {
-    background-image: url(../images/bg.gif);
-    background-repeat: no-repeat;
-    background-position: center right;
-    cursor: pointer;
+table.tablesorter thead tr th.header { position: relative; cursor: pointer; }
+/* Sort indicator: both arrows on a sortable column, one on the sorted column.
+   Drawn through a mask so it takes the theme's colours. */
+table.tablesorter thead tr th.header::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    width: 8px;
+    height: 10px;
+    margin-top: -5px;
+    background-color: var(--text-faint);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 10'%3E%3Cpath d='M4 0 8 4H0zM0 6h8l-4 4z'/%3E%3C/svg%3E") no-repeat center / contain;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 10'%3E%3Cpath d='M4 0 8 4H0zM0 6h8l-4 4z'/%3E%3C/svg%3E") no-repeat center / contain;
 }
 table.tablesorter tfoot tr td {
     padding: 0.4em 0.5em;
@@ -390,12 +498,20 @@ table.tablesorter tbody td {
 }
 table.tablesorter tbody td:last-child, table.tablesorter tfoot td:last-child { border-right: 0; }
 table.tablesorter tbody tr.odd td { background-color: var(--surface-alt); }
-table.tablesorter thead tr .headerSortUp { background-image: url(../images/asc.gif); }
-table.tablesorter thead tr .headerSortDown { background-image: url(../images/desc.gif); }
+table.tablesorter thead tr .headerSortUp::after {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 10'%3E%3Cpath d='M4 2.5 8 6.5H0z'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 10'%3E%3Cpath d='M4 2.5 8 6.5H0z'/%3E%3C/svg%3E");
+}
+table.tablesorter thead tr .headerSortDown::after {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 10'%3E%3Cpath d='M0 3.5h8l-4 4z'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 10'%3E%3Cpath d='M0 3.5h8l-4 4z'/%3E%3C/svg%3E");
+}
 table.tablesorter thead tr .headerSortDown, table.tablesorter thead tr .headerSortUp {
     background-color: var(--accent-soft);
     color: var(--accent);
 }
+table.tablesorter thead tr .headerSortDown::after,
+table.tablesorter thead tr .headerSortUp::after { background-color: var(--accent); }
 table.tablesorter tbody td:not(:first-child),
 table.tablesorter tfoot td:not(:first-child) {
     font-family: var(--font-mono);
@@ -406,16 +522,16 @@ table.tablesorter tfoot td:first-child { text-align: left; }
 
 table.tablesorter tbody tr td.status-red, td.status-red {
     background-color: var(--status-red); color: var(--status-red-text); }
-.reports tr.status-red td.summary { color: var(--status-red); font-weight: 600; }
+.reports tr.status-red td.summary { color: var(--summary-red); font-weight: 600; }
 table.tablesorter tbody tr td.status-green, td.status-green {
     background-color: var(--status-green); color: var(--status-green-text); }
-tr.status-green td.summary { color: #5c9a1b; font-weight: 600; }
+tr.status-green td.summary { color: var(--summary-green); font-weight: 600; }
 table.tablesorter tbody tr td.status-yellow, td.status-yellow {
     background-color: var(--status-yellow); color: var(--status-yellow-text); }
-tr.status-yellow td.summary { color: #c9a000; font-weight: 600; }
+tr.status-yellow td.summary { color: var(--summary-yellow); font-weight: 600; }
 table.tablesorter tbody tr td.status-lightgreen, td.status-lightgreen {
     background-color: var(--status-lightgreen); color: var(--status-lightgreen-text); }
-tr.status-lightgreen td.summary { color: #8bb000; font-weight: 600; }
+tr.status-lightgreen td.summary { color: var(--summary-lightgreen); font-weight: 600; }
 
 table.tablesorter tbody tr.highlight td, tr.highlight td {
     background-color: var(--accent-soft) !important;
@@ -468,10 +584,8 @@ a#permalink, a#exportcsv {
     gap: 0.25em;
     font-size: 0.9em;
 }
+/* The download glyph's viewBox carries a margin, so both look the same size */
 a#permalink svg, a#exportcsv svg { width: 1.1em; height: 1.1em; }
-/* The download glyph fills its 16px grid, the link glyph does not;
-   shrink it slightly so the two look the same size. */
-a#exportcsv svg { width: 0.95em; height: 0.95em; }
 a#exportcsv + a#permalink { margin-left: 1em; }
 
 /* Plot styles */
@@ -493,7 +607,7 @@ div.miniplot:hover { border-color: var(--accent); background-color: var(--surfac
 #dygraph-tooltip {
     display: none;
     position: absolute;
-    background: rgba(255, 255, 255, 0.96);
+    background: var(--tooltip-bg);
     color: var(--text);
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
@@ -502,7 +616,7 @@ div.miniplot:hover { border-color: var(--accent); background-color: var(--surfac
     pointer-events: none;
     z-index: 100;
     white-space: nowrap;
-    box-shadow: 0 4px 12px rgba(16, 24, 40, 0.14);
+    box-shadow: var(--shadow-raised);
 }
 
 div.compplot {
@@ -536,8 +650,8 @@ p.note, p.warning {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
 }
-p.warning { margin-left: 10px; border-left: 3px solid #d9480f; }
-p.warning::before { content: '⚠ '; color: #d9480f; }
+p.warning { margin-left: 10px; border-left: 3px solid var(--warning); }
+p.warning::before { content: '⚠ '; color: var(--warning); }
 p.note {
     margin: 20px 2.4em 0;
     padding-left: 55px;
@@ -591,5 +705,5 @@ div.footer a:hover { color: var(--accent); text-decoration: underline; }
 }
 
 /* speed.pypy.org additions */
-.envlinecolor { float: right; font-size: 12px; line-height: 18px; color: #555; }
+.envlinecolor { float: right; font-size: 12px; line-height: 18px; color: var(--text-muted); }
 a#exportcsv:hover { text-decoration: underline; }

@@ -275,7 +275,7 @@ function renderPlot(data) {
         var header = '<div style="font-weight:bold;margin-bottom:3px">' +
                      (dk ? dk.slice(0, 16) : '');
         if (commitInfo) {
-            header += ' <span style="font-weight:normal;font-size:0.85em;color:#666">commit: ' + commitInfo.commit;
+            header += ' <span style="font-weight:normal;font-size:0.85em;color:var(--text-muted)">commit: ' + commitInfo.commit;
             if (commitInfo.tag) { header += '&nbsp;&nbsp;tag: ' + commitInfo.tag; }
             if (versionBoundaries.length > 0 && commitInfo.suite_version) { header += '&nbsp;&nbsp;suite: ' + commitInfo.suite_version; }
             header += '</span>';
@@ -287,7 +287,7 @@ function renderPlot(data) {
             if (!s.isVisible || s.y === undefined) { return; }
             var seriesKey = labelToSeriesKey[s.labelHTML] || labelToSeriesKey[s.name];
             if (!seriesKey) { return; }  // skip baseline
-            var color = colorMap[s.labelHTML] || colorMap[s.name] || '#333';
+            var color = colorMap[s.labelHTML] || colorMap[s.name] || 'var(--text)';
             html += '<div style="margin:2px 0;color:' + color + '">' +
                     '<b>' + s.labelHTML + ': ' + s.y.toPrecision(4) + '</b>';
             if (dk && commitMap[dk] && commitMap[dk][seriesKey]) {
@@ -346,6 +346,7 @@ function renderPlot(data) {
         }
     }
 
+    var theme = Theme.dygraphOptions();
     plotInstance = new Dygraph(
         document.getElementById('plot'),
         built.data,
@@ -354,6 +355,10 @@ function renderPlot(data) {
             titleHeight: 24,
             labels: built.labels,
             colors: built.colors,
+            axisLineColor: theme.axisLineColor,
+            gridLineColor: theme.gridLineColor,
+            gridLineWidth: theme.gridLineWidth,
+            highlightSeriesBackgroundColor: theme.highlightSeriesBackgroundColor,
             customBars: true,
             series: seriesOpts,
             legend: 'never',
@@ -366,6 +371,8 @@ function renderPlot(data) {
             dateWindow: singlePointWindow,
             connectSeparatedPoints: true,
             underlayCallback: function(canvas, area, g) {
+                // Read the colour at draw time: a theme switch redraws the plot
+                var textColor = Theme.chartColors().text;
                 versionBoundaries.forEach(function(b) {
                     var xval = equidistant ? b.idx : dateIndex[b.dk];
                     var cx = g.toDomXCoord(xval);
@@ -373,12 +380,14 @@ function renderPlot(data) {
                     canvas.beginPath();
                     canvas.moveTo(cx, area.y);
                     canvas.lineTo(cx, area.y + area.h);
-                    canvas.strokeStyle = 'rgba(120, 120, 120, 0.6)';
+                    canvas.strokeStyle = textColor;
+                    canvas.globalAlpha = 0.6;
                     canvas.lineWidth = 1.5;
                     canvas.setLineDash([4, 3]);
                     canvas.stroke();
                     canvas.setLineDash([]);
-                    canvas.fillStyle = 'rgba(80, 80, 80, 0.75)';
+                    canvas.fillStyle = textColor;
+                    canvas.globalAlpha = 0.85;
                     canvas.font = '10px sans-serif';
                     canvas.fillText(b.label, cx + 3, area.y + 12);
                     canvas.restore();
@@ -456,7 +465,7 @@ function renderPlot(data) {
             var absX = chartOffset.left + mx;
             var onRight = absX > $(window).width() / 2;
             $tip.html(legendFormatter({x: lastHighlightX, series: lastHighlightPoints.map(function(pt) {
-                return {color: colorMap[pt.name] || '#333',
+                return {color: colorMap[pt.name] || 'var(--text)',
                         labelHTML: pt.name, name: pt.name,
                         y: pt.yval, isVisible: true};
             })}));
@@ -682,6 +691,10 @@ function init(def) {
         defaults.environments = defaults.environment ? [defaults.environment] : [];
     }
     $.ajaxSetup({cache: false});
+    // The miniplots draw no axes or grid, so only the main plot needs redrawing
+    Theme.onChange(function() {
+        if (plotInstance) { plotInstance.updateOptions(Theme.dygraphOptions()); }
+    });
     initializeSite();
 }
 
