@@ -1,3 +1,53 @@
 select#baseline {
     width: 100%;
 }
+
+/* Benchmark picker: a search box over a list that scrolls inside its card */
+div#benchmarksearchbox { position: relative; margin: 0.2em 0 0.6em; }
+div#benchmarksearchbox::before {
+    /* Bootstrap Icons search (MIT, twbs/icons), coloured via mask */
+    content: '';
+    position: absolute;
+    left: 0.55em;
+    top: 50%;
+    width: 0.85em;
+    height: 0.85em;
+    transform: translateY(-50%);
+    background-color: var(--text-faint);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0'/%3E%3C/svg%3E") no-repeat center / contain;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0'/%3E%3C/svg%3E") no-repeat center / contain;
+    pointer-events: none;
+}
+div#benchmarksearchbox:focus-within::before { background-color: var(--text-muted); }
+input#benchmarksearch {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0;
+    font: inherit;
+    font-size: 0.93em;
+    color: var(--text);
+    padding: 0.25em 0.5em 0.25em 1.8em;
+    background-color: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+}
+div#benchmarklist {
+    max-height: min(60vh, 34em);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    /* let the scrollbar sit in the card's padding rather than over the names */
+    margin-right: -0.6em;
+    padding-right: 0.3em;
+}
+div#benchmarklist ul:last-of-type { margin-bottom: 0; }
+/* Radio and name side by side, so a long name wraps under itself instead of
+   dropping below the radio and running out of the card */
+div#benchmark li { display: flex; align-items: flex-start; gap: 0.4em; }
+div#benchmark li input { flex: none; margin-top: 0.25em; }
+div#benchmark li label { min-width: 0; overflow-wrap: anywhere; }
+/* While searching, matches show even in folded suites */
+div#benchmarklist.searching li { display: flex !important; }
+div#benchmarklist.searching li.nomatch,
+div#benchmarklist.searching ul.nomatch { display: none !important; }
+p#benchmarknomatch { margin: 0.2em 0; color: var(--text-muted); }
