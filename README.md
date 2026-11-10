@@ -86,6 +86,14 @@ field will be shown in the Changes and Timeline views.
 
 **Note**: Git and Mercurial need to locally clone the repository. That means that your `sample_project/repos` directory will need to be owned by the server. In the case of a typical Apache installation, you'll need to type `sudo chown www-data:www-data sample_project/repos`
 
+## Hacking on speed.python.org vs speed.pypy.org
+
+This repo serves both speed.python.org and speed.pypy.org. It decides which
+data model and UI specializations to show by default by the location of a 
+`*/local_settings.py` file in either `./speed_python` or `./speed_pypy`. If
+neither or both exist, it will choose `speed.python.org`. The default can also
+be overridden by using the `--settings speed_pypy` command line option.
+
 ## Saving data
 
 Data is saved POSTing to `http://localhost:8000/result/add/`.
