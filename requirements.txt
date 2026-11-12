@@ -1,5 +1,5 @@
 # The production server runs Python 3.10.12, so pins must stay installable
 # there.
-django>=5.2,<7
+django>=5.2.18,<7
 isodate==0.7.2
 matplotlib
