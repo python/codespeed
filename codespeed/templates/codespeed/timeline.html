@@ -64,7 +64,12 @@
       <input id="b_show_none" type="radio" name="benchmark" value="show_none" />
       <label for="b_show_none">Display none</label>
     </li>
-  </ul>{% endif %}
+  </ul>
+  <div id="benchmarksearchbox">
+    <input id="benchmarksearch" type="search" placeholder="Search benchmarks…"
+           aria-label="Search benchmarks" autocomplete="off" spellcheck="false" />
+  </div>{% endif %}
+  <div id="benchmarklist">
   {% regroup benchmarks by get_source_display as benchmark_groups %}
   {% for group in benchmark_groups %}
   <ul>{% if benchmark_groups|length > 1 %}<a href="#" class="togglefold">{{ group.grouper }}</a>{% endif %}
@@ -75,6 +80,8 @@
     </li>
     {% endfor %}
   </ul>{% endfor %}
+  <p id="benchmarknomatch" hidden>No matching benchmarks</p>
+  </div>
   </div>
 </div>
 </div>
