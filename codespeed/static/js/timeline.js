@@ -651,10 +651,50 @@ function updateEnvIndicators() {
     });
 }
 
+function initBenchmarkSearch() {
+    var list = $("#benchmarklist");
+    var search = $("#benchmarksearch");
+    var groups = list.children("ul");
+
+    search.on("input", function() {
+        var terms = $(this).val().toLowerCase().split(/\s+/).filter(Boolean);
+        var anyMatch = false;
+        groups.each(function() {
+            var groupMatch = false;
+            $(this).children("li").each(function() {
+                var name = $(this).children("label").text().toLowerCase();
+                var match = terms.every(function(t) { return name.indexOf(t) !== -1; });
+                $(this).toggleClass("nomatch", !match);
+                groupMatch = groupMatch || match;
+            });
+            $(this).toggleClass("nomatch", !groupMatch);
+            anyMatch = anyMatch || groupMatch;
+        });
+        list.toggleClass("searching", terms.length > 0);
+        $("#benchmarknomatch").prop("hidden", anyMatch);
+        list.scrollTop(0);
+    }).on("keydown", function(e) {
+        if (e.key === "Enter") {
+            // pick the first match
+            list.find("li:not(.nomatch) input").first().prop("checked", true).change();
+        } else if (e.key === "Escape" && $(this).val()) {
+            $(this).val("").trigger("input");
+        }
+    });
+
+    // bring the selected benchmark into view inside the scrolling list
+    var checked = list.find("input:checked").closest("li");
+    if (checked.length) {
+        list.scrollTop(checked.position().top - list.children().first().position().top -
+                       list.height() / 2);
+    }
+}
+
 function initializeSite() {
     var params = getUrlParams();
     setExeColors();
     setValuesOfInputFields(params);
+    initBenchmarkSearch();
 
     var onChange = function() { updateUrl(); refreshContent(); };
 
