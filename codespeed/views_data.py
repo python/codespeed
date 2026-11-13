@@ -143,38 +143,59 @@ def getcomparisonexes():
     exekeys = []
     baselines = getbaselineexecutables(include_tags=comparison_commit_tags)
 
+    # Latest revision of every branch shown on the comparison page, grouped by
+    # project. Only untagged ones: tagged revisions already come from
+    # getbaselineexecutables() above.
+    branch_heads = {}
+    for branch in Branch.objects.filter(display_on_comparison_page=True):
+        try:
+            rev = Revision.objects.filter(branch=branch).latest('date')
+        except Revision.DoesNotExist:
+            continue
+        if rev.tag == "":
+            branch_heads.setdefault(branch.project_id, []).append((branch, rev))
+
+    # Nothing in the schema records which executables were built at which
+    # revision, so Result is the only source of truth for that. Without this
+    # check both loops below emit the full executable x revision product of
+    # each project, and every pair that was never benchmarked offers a
+    # selection that can only come back empty.
+    candidate_revs = [b['revision'] for b in baselines if b['key'] != "none"]
+    candidate_revs += [rev for heads in branch_heads.values()
+                       for _, rev in heads]
+    benchmarked = set(
+        Result.objects.filter(revision__in=candidate_revs)
+        .values_list('executable_id', 'revision_id')
+        .distinct()
+    )
+
     for proj in Project.objects.all():
         executables = []
         executablekeys = []
         # add all tagged revs for any project
         for exe in baselines:
-            if exe['key'] != "none" and exe['executable'].project == proj:
+            if (exe['key'] != "none" and exe['executable'].project == proj and
+                    (exe['executable'].id, exe['revision'].id) in benchmarked):
                 executablekeys.append(exe['key'])
                 executables.append(exe)
 
         # add latest revs of the project
-        branches = Branch.objects.filter(project=proj, display_on_comparison_page=True)
-        for branch in branches:
-            try:
-                rev = Revision.objects.filter(branch=branch).latest('date')
-            except Revision.DoesNotExist:
-                continue
-            # Now only append when tag == "",
-            # because we already added tagged revisions
-            if rev.tag == "":
-                for exe in Executable.objects.filter(project=proj):
-                    exestring = get_sanitized_executable_name_for_comparison_view(exe)
-                    name = exestring + " latest"
-                    if branch.name != proj.default_branch:
-                        name += " in branch '" + branch.name + "'"
-                    key = str(exe.id) + ":L:" + branch.name
-                    executablekeys.append(key)
-                    executables.append({
-                        'key': key,
-                        'executable': exe,
-                        'revision': rev,
-                        'name': name,
-                    })
+        for branch, rev in branch_heads.get(proj.id, []):
+            for exe in Executable.objects.filter(project=proj):
+                if (exe.id, rev.id) not in benchmarked:
+                    continue
+                exestring = get_sanitized_executable_name_for_comparison_view(exe)
+                name = exestring + " latest"
+                if branch.name != proj.default_branch:
+                    name += " in branch '" + branch.name + "'"
+                key = str(exe.id) + ":L:" + branch.name
+                executablekeys.append(key)
+                executables.append({
+                    'key': key,
+                    'executable': exe,
+                    'revision': rev,
+                    'name': name,
+                })
         all_executables[proj] = executables
         exekeys += executablekeys
     return all_executables, exekeys
