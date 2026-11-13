@@ -19,6 +19,7 @@ from django.db import connection, transaction
 _BOOL_COLS = {
     'codespeed_project':   {'track'},
     'codespeed_branch':    {'display_on_comparison_page'},
+    'codespeed_environment': {'active'},
     'codespeed_benchmark': {'lessisbetter', 'default_on_comparison'},
 }
 

@@ -476,8 +476,14 @@ class TestTimeline(TestCase):
 
     def test_source_fold_with_several_sources(self):
         Benchmark.objects.create(name='float', source='pyperformance')
+        # Suites are rendered folded, except the one of the selected benchmark
         response = self.client.get(reverse('timeline'))
-        self.assertContains(response, 'class="togglefold">Legacy</a>')
+        self.assertContains(response, 'class="togglefold folded">Legacy</a>')
+        self.assertContains(
+            response, 'class="togglefold folded">PyPerformance</a>')
+        response = self.client.get(
+            reverse('timeline'), {'ben': 'float.pyperformance'})
+        self.assertContains(response, 'class="togglefold folded">Legacy</a>')
         self.assertContains(response, 'class="togglefold">PyPerformance</a>')
 
     @override_settings(TIMELINE_GRID_REVISIONS=25)
@@ -516,10 +522,45 @@ class TestComparison(TestCase):
         self.assertEqual(self.checked_env_names(response),
                          ['Dual Core', 'Quad Core'])
 
+    def test_historical_environments_not_checked_by_default(self):
+        self.quad.active = False
+        self.quad.save()
+        response = self.client.get(self.path)
+        self.assertEqual(self.checked_env_names(response), ['Dual Core'])
+        self.assertEqual(response.context['enviros'], [self.dual])
+        self.assertEqual(response.context['historical_enviros'], [self.quad])
+        self.assertContains(response, '>Historical</a>')
+        # Folded in the markup, not by script after the page has rendered
+        self.assertTrue(response.context['historical_folded'])
+        self.assertContains(response, 'class="togglefold folded"')
+        # Permalinks still select them
+        response = self.client.get(self.path, {'env': str(self.quad.id)})
+        self.assertFalse(response.context['historical_folded'])
+        self.assertEqual(self.checked_env_names(response), ['Quad Core'])
+
+    def test_no_historical_group_when_all_active(self):
+        response = self.client.get(self.path)
+        self.assertNotContains(response, '>Historical</a>')
+
     def test_benchmarks_grouped_by_units_with_one_source(self):
         response = self.client.get(self.path)
         self.assertEqual(list(response.context['benchmarks']), ['Time'])
         self.assertContains(response, 'class="togglefold">Time</a>')
+
+    def test_groups_with_nothing_checked_are_rendered_folded(self):
+        response = self.client.get(self.path)
+        self.assertFalse(response.context['enviros_folded'])
+        self.assertEqual(response.context['folded_exe_groups'], [])
+        self.assertEqual(response.context['folded_bench_groups'], [])
+        self.assertNotContains(response, 'togglefold folded')
+
+        Benchmark.objects.create(name='float', source='pyperformance',
+                                 default_on_comparison=False)
+        response = self.client.get(self.path)
+        self.assertEqual(response.context['folded_bench_groups'],
+                         ['PyPerformance'])
+        self.assertContains(
+            response, 'class="togglefold folded">PyPerformance</a>')
 
     def test_benchmarks_grouped_by_source_with_several_sources(self):
         Benchmark.objects.create(name='float', source='pyperformance')

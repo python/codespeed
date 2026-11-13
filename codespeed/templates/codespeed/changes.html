@@ -22,7 +22,15 @@
         <label for="env{{ env.id }}">{{ env }}</label>
       </li>
     {% endfor %}
-    </ul>
+    </ul>{% if historical_environments %}
+    <ul class="historical"><a href="#" class="togglefold{% if historical_folded %} folded{% endif %}" title="Environments that are no longer in use and no longer receive results">Historical</a>
+    {% for env in historical_environments %}
+      <li{% if historical_folded %} style="display: none"{% endif %} title="{{ env.os }}, {{ env.cpu }}">
+        <input id="env{{ env.id }}" type="radio" name="environment" value="{{ env.id }}" />
+        <label for="env{{ env.id }}">{{ env }}</label>
+      </li>
+    {% endfor %}
+    </ul>{% endif %}
   </div>
 </div>
 

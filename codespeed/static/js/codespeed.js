@@ -23,6 +23,14 @@ function getLoadText(text, h) {
     return loadtext;
 }
 
+// Unfold the .togglefold groups holding the given inputs.
+function unfoldGroups(inputs) {
+    inputs.closest("ul").each(function() {
+        $(this).children("li").show();
+        $(this).children("a.togglefold").removeClass('folded');
+    });
+}
+
 $(function() {
     // Check all and none links
     $('.checkall').each(function() {

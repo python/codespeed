@@ -25,11 +25,20 @@ def parse_benchmark_ident(ben):
     return ben, 'legacy'
 
 
+def split_environments(enviros):
+    """Split environments into ``(active, historical)`` lists."""
+    active, historical = [], []
+    for env in enviros:
+        (active if env.active else historical).append(env)
+    return active, historical
+
+
 def get_default_environment(enviros, data, multi=False):
     """Returns the default environment. Preference level is:
         * Present in URL parameters (permalinks)
         * Value in settings.py
-        * First Environment ID
+        * Active environments, the first one unless ``multi``
+        * All environments, if none of them is active
 
     """
     defaultenviros = []
@@ -54,9 +63,10 @@ def get_default_environment(enviros, data, multi=False):
                 if settings.DEF_ENVIRONMENT == env.name:
                     defaultenviros.append(env)
                     break
-    # Last fallback
+    # Last fallback: historical environments are only a default when there
+    # is nothing else
     if not defaultenviros:
-        defaultenviros = enviros
+        defaultenviros = split_environments(enviros)[0] or list(enviros)
     if multi:
         return defaultenviros
     else:

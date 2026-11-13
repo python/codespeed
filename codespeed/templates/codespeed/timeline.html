@@ -27,7 +27,15 @@
         <label for="env{{ env.name }}">{{ env }}</label><div class="envlinecolor"></div>
       </li>
     {% endfor %}
-    </ul>
+    </ul>{% if historical_environments %}
+    <ul class="historical"><a href="#" class="togglefold{% if historical_folded %} folded{% endif %}" title="Environments that are no longer in use and no longer receive results">Historical</a>
+    {% for env in historical_environments %}
+      <li{% if historical_folded %} style="display: none"{% endif %} title="{{ env.os }}, {{ env.cpu }}">
+        <input id="env{{ env.name }}" type="checkbox" name="environments" value="{{ env.id }}" />
+        <label for="env{{ env.name }}">{{ env }}</label><div class="envlinecolor"></div>
+      </li>
+    {% endfor %}
+    </ul>{% endif %}
   </div>
 </div>
 <div id="executable" class="sidebox">
@@ -72,9 +80,9 @@
   <div id="benchmarklist">
   {% regroup benchmarks by get_source_display as benchmark_groups %}
   {% for group in benchmark_groups %}
-  <ul>{% if benchmark_groups|length > 1 %}<a href="#" class="togglefold">{{ group.grouper }}</a>{% endif %}
+  <ul>{% if benchmark_groups|length > 1 %}<a href="#" class="togglefold{% if defaultbenchmark not in group.list %} folded{% endif %}">{{ group.grouper }}</a>{% endif %}
     {% for bench in group.list|dictsort:"name" %}
-    <li title="{{ bench.description }}">
+    <li{% if benchmark_groups|length > 1 and defaultbenchmark not in group.list %} style="display: none"{% endif %} title="{{ bench.description }}">
       <input id="benchmark_{{ bench.id }}" type="radio" name="benchmark" value="{{ bench.ident }}" />
       <label for="benchmark_{{ bench.id }}">{{ bench }}</label>
     </li>
