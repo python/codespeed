@@ -76,8 +76,10 @@ class BenchmarkAdmin(admin.ModelAdmin):
 
 @admin.register(Environment)
 class EnvironmentAdmin(admin.ModelAdmin):
-    list_display = ('name', 'cpu', 'memory', 'os', 'kernel')
-    ordering = ['name']
+    list_display = ('name', 'cpu', 'memory', 'os', 'kernel', 'active')
+    list_editable = ('active',)
+    list_filter = ('active',)
+    ordering = ['-active', 'name']
     search_fields = ('name', 'cpu', 'memory', 'os', 'kernel')
 
 

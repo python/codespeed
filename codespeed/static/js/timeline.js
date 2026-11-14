@@ -625,7 +625,7 @@ function setValuesOfInputFields(params) {
     }
     benchRadio.prop('checked', true);
     // reveal the suite accordion section that holds the selected benchmark
-    benchRadio.closest("ul").show().children("a.togglefold").removeClass('folded');
+    unfoldGroups(benchRadio);
 
     var envDefault = (defaults.environments || []).map(String).join(',');
     var envIds = valueOrDefault(params.env, envDefault).split(',').filter(Boolean);
@@ -633,6 +633,7 @@ function setValuesOfInputFields(params) {
     envIds.forEach(function(envId) {
         envSel.filter("[value='" + envId.trim() + "']").prop('checked', true);
     });
+    unfoldGroups(envSel.filter(':checked'));
     updateEnvIndicators();
     updateExeColors();
     $("#baselinecolor").css("background-color", baselineColor);

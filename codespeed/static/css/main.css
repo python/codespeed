@@ -379,7 +379,7 @@ div.about_content p, div.about_content li, div.about_content h2, div.about_conte
 .compplot-wrap { display: inline-block; }
 
 a.togglefold { color: var(--text); font-weight: 500; }
-a.togglefold:hover { text-decoration: none; }
+a.togglefold:hover, a.togglefold:focus { text-decoration: none; }
 a.togglefold::before {
     /* Bootstrap Icons chevron-right (MIT, twbs/icons), coloured via mask */
     content: '';

@@ -47,7 +47,8 @@ CREATE TABLE codespeed_environment (
     cpu TEXT NOT NULL,
     memory TEXT NOT NULL,
     os TEXT NOT NULL,
-    kernel TEXT NOT NULL
+    kernel TEXT NOT NULL,
+    active INTEGER NOT NULL DEFAULT 1
 );
 
 CREATE TABLE codespeed_benchmark (

@@ -19,7 +19,8 @@ from django.views.generic.base import TemplateView
 from .auth import basic_auth_required
 from .models import (Environment, Report, Project, Revision, Result,
                      Executable, Benchmark, Branch)
-from .views_data import (get_default_environment, getbaselineexecutables,
+from .views_data import (get_default_environment, split_environments,
+                         getbaselineexecutables,
                          getdefaultexecutable, getcomparisonexes,
                          get_benchmark_results, get_num_revs_and_benchmarks,
                          get_stats_with_defaults, parse_benchmark_ident)
@@ -113,7 +114,7 @@ def gethistoricaldata(request):
     if settings.DEF_ENVIRONMENT:
         env = env.get(name=settings.DEF_ENVIRONMENT)
     else:
-        env = env.first()
+        env = env.order_by('-active', 'id').first()
 
     # Fetch Baseline data, filter by executable
     baseline_results = []
@@ -323,6 +324,7 @@ def comparison(request):
     enviros = Environment.objects.all()
     if not enviros:
         return no_environment_error(request)
+    active_enviros, historical_enviros = split_environments(enviros)
     checkedenviros = get_default_environment(enviros, data, multi=True)
     if 'env' not in data and \
             get_setting('COMP_ENVIRONMENTS_DEFAULT', 'all') == 'default':
@@ -473,6 +475,7 @@ def comparison(request):
             settings.CHART_ORIENTATION == 'horizontal'):
         selecteddirection = True
 
+    checked_bench_ids = {bench.id for bench in checkedbenchmarks}
     return render(request, 'codespeed/comparison.html', {
         'checkedexecutables': checkedexecutables,
         'checkedbenchmarks': checkedbenchmarks,
@@ -480,7 +483,19 @@ def comparison(request):
         'executables': executables,
         'benchmarks': benchmarks,
         'bench_units': json.dumps(bench_units),
-        'enviros': enviros,
+        'enviros': active_enviros,
+        'historical_enviros': historical_enviros,
+        'historical_folded': not any(
+            env in checkedenviros for env in historical_enviros),
+        # Sidebar groups with nothing checked are rendered folded
+        'enviros_folded': not any(
+            env in checkedenviros for env in active_enviros),
+        'folded_exe_groups': [
+            proj for proj, exes in executables.items()
+            if not any(exe['key'] in checkedexecutables for exe in exes)],
+        'folded_bench_groups': [
+            key for key, benchlist in benchmarks.items()
+            if not any(bench.id in checked_bench_ids for bench in benchlist)],
         'charts': charts,
         'selectedbaseline': selectedbaseline,
         'selectedchart': selectedchart,
@@ -687,6 +702,7 @@ def timeline(request):
     enviros = Environment.objects.all()
     if not enviros:
         return no_environment_error(request)
+    active_enviros, historical_enviros = split_environments(enviros)
     defaultenviro = get_default_environment(enviros, data)
     if 'env' in data:
         defaultenvironments = get_default_environment(enviros, data, multi=True)[:2]
@@ -832,7 +848,10 @@ def timeline(request):
         'grid_revisions': grid_revisions,
         'executables': executables,
         'benchmarks': benchmarks,
-        'environments': enviros,
+        'environments': active_enviros,
+        'historical_environments': historical_enviros,
+        'historical_folded': not any(
+            env in defaultenvironments for env in historical_enviros),
         'branch_list': branch_list,
         'defaultbranch': defaultbranch,
         'defaultequid': defaultequid,
@@ -938,6 +957,7 @@ def changes(request):
     enviros = Environment.objects.all()
     if not enviros:
         return no_environment_error(request)
+    active_enviros, historical_enviros = split_environments(enviros)
     defaultenv = get_default_environment(enviros, data)
 
     if not len(Project.objects.filter(track=True)):
@@ -1030,7 +1050,10 @@ def changes(request):
         'defaulttrend': defaulttrend,
         'defaultchangethres': defaultchangethres,
         'defaulttrendthres': defaulttrendthres,
-        'environments': enviros,
+        'environments': active_enviros,
+        'historical_environments': historical_enviros,
+        'historical_folded': not any(
+            env in defaultenv for env in historical_enviros),
         'executables': executables,
         'projectmatrix': projectmatrix,
         'revisionlists': revisionlists,

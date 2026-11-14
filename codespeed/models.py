@@ -214,6 +214,11 @@ class Environment(models.Model):
     memory = models.CharField(max_length=100, blank=True)
     os = models.CharField(max_length=100, blank=True)
     kernel = models.CharField(max_length=100, blank=True)
+    active = models.BooleanField(
+        default=True, db_default=True,
+        help_text="Untick for a historical environment that no longer "
+                  "receives results. It is then listed in a folded "
+                  "\"Historical\" group and not selected by default.")
 
     def __str__(self):
         return self.name

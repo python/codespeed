@@ -18,22 +18,29 @@
 <div id="environment" class="sidebox">
   <div class="boxhead"><h2>Environments</h2></div>
   <div class="boxbody">
-    <ul><a href="#" class="togglefold">Environments</a> <span class="checklinks">(<a href="#" class="checkall">All</a>, <a href="#" class="uncheckall">None</a>)</span>
+    <ul><a href="#" class="togglefold{% if enviros_folded %} folded{% endif %}">Environments</a> <span class="checklinks">(<a href="#" class="checkall">All</a>, <a href="#" class="uncheckall">None</a>)</span>
     {% for env in enviros %}
-      <li title="{{ env.os }}, {{ env.cpu }}">
+      <li{% if enviros_folded %} style="display: none"{% endif %} title="{{ env.os }}, {{ env.cpu }}">
         <input id="env_{{ env.id }}" type="checkbox" name="environments" value="{{ env.id }}"{% if env in checkedenviros %} checked{% endif %} />
         <label for="env_{{ env.id }}">{{ env }}</label>
       </li>{% endfor %}
-    </ul>
+    </ul>{% if historical_enviros %}
+    <ul class="historical"><a href="#" class="togglefold{% if historical_folded %} folded{% endif %}" title="Environments that are no longer in use and no longer receive results">Historical</a> <span class="checklinks">(<a href="#" class="checkall">All</a>, <a href="#" class="uncheckall">None</a>)</span>
+    {% for env in historical_enviros %}
+      <li{% if historical_folded %} style="display: none"{% endif %} title="{{ env.os }}, {{ env.cpu }}">
+        <input id="env_{{ env.id }}" type="checkbox" name="environments" value="{{ env.id }}"{% if env in checkedenviros %} checked{% endif %} />
+        <label for="env_{{ env.id }}">{{ env }}</label>
+      </li>{% endfor %}
+    </ul>{% endif %}
   </div>
 </div>
 <div id="executable" class="sidebox">
   <div class="boxhead"><h2>Executables</h2></div>
   <div class="boxbody">
     {% for proj, executable in executables.items %}
-    <ul><a href="#" class="togglefold">{{ proj }}</a> <span class="checklinks">(<a href="#" class="checkall">All</a>, <a href="#" class="uncheckall">None</a>)</span>
+    <ul><a href="#" class="togglefold{% if proj in folded_exe_groups %} folded{% endif %}">{{ proj }}</a> <span class="checklinks">(<a href="#" class="checkall">All</a>, <a href="#" class="uncheckall">None</a>)</span>
     {% for exe in executable %}
-      <li title="{{ exe.executable }} - {{ exe.revision }}">
+      <li{% if proj in folded_exe_groups %} style="display: none"{% endif %} title="{{ exe.executable }} - {{ exe.revision }}">
         {% if exe.key in checkedexecutables %}
             <input id="exe_{{ exe.key }}" type="checkbox" name="executables" value="{{ exe.key }}" checked />
         {% else %}
@@ -48,9 +55,9 @@
   <div class="boxhead"><h2>Benchmarks</h2></div>
   <div class="boxbody">
   {% for key,benchlist in benchmarks.items %}
-  <ul><a href="#" class="togglefold">{{ key }}</a> <span class="checklinks">(<a href="#" class="checkall">All</a>, <a href="#" class="uncheckall">None</a>)</span>
+  <ul><a href="#" class="togglefold{% if key in folded_bench_groups %} folded{% endif %}">{{ key }}</a> <span class="checklinks">(<a href="#" class="checkall">All</a>, <a href="#" class="uncheckall">None</a>)</span>
     {% for bench in benchlist|dictsort:"name" %}
-    <li title="{{ bench.description }}">
+    <li{% if key in folded_bench_groups %} style="display: none"{% endif %} title="{{ bench.description }}">
       {% if bench in checkedbenchmarks %}
         <input id="benchmark_{{ bench.id }}" type="checkbox" name="benchmarks" value="{{ bench.id }}" data-source="{{ bench.source }}" checked />
       {% else %}

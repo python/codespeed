@@ -78,6 +78,11 @@ environment and define a default project.
 * Go to `http://localhost:8000/admin/codespeed/project/`
   and create a project.
 
+An environment that no longer receives results can be marked as historical
+by unticking its "Active" field in the admin. Historical environments keep
+their data and permalinks, but are listed in a folded "Historical" group in
+the Changes, Timeline and Comparison views and are not selected by default.
+
 Check the field "Track changes" and, in case you want version control
 integration, configure the relevant fields.
 
@@ -192,6 +197,7 @@ several parameters (the file includes comments with full examples).
   the Timeline and Changes views.
 * `DEF_ENVIRONMENT`: Defines which environment should be selected as default
   in the Changes and Timeline views.
+  Without it, the first *active* environment is used.
 * `CHANGE_THRESHOLD`
 * `TREND_THRESHOLD`
 
@@ -229,8 +235,9 @@ The main customization for the homepage is to display either the reports
 * `NORMALIZATION`: Defines whether normalization should be enabled as default
   in the Comparison view.
 * `CHART_ORIENTATION`: horizontal or vertical
-* `COMP_ENVIRONMENTS_DEFAULT`: `all` (the default) checks every environment;
-  `default` checks only `DEF_ENVIRONMENT`, or the first environment.
+* `COMP_ENVIRONMENTS_DEFAULT`: `all` (the default) checks every active
+  environment; `default` checks only `DEF_ENVIRONMENT`, or the first active
+  environment.
 * `COMP_EXECUTABLES`: per default all executables will be checked. When there
   are a large number of tags or executables, it is better to only select a few
   so that the plots are not too cluttered.

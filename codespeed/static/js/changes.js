@@ -177,6 +177,7 @@ function init(defaults) {
     $("input[name='executable']").change(changeRevisions);
 
     $("#env" + defaults.environment).prop('checked', true);
+    unfoldGroups($("input[name='environment']:checked"));
     $("input[name='environment']").change(function() {
         updateRevisionMarkers($("input[name='environment']:checked").val());
         refreshContent();
