@@ -1,7 +1,8 @@
 from django.test import TestCase
 from django.test import override_settings
 
-from codespeed.models import Project, Executable, Branch, Revision, Benchmark
+from codespeed.models import (Project, Executable, Branch, Revision, Benchmark,
+                              Environment, Result)
 from codespeed.views import getbaselineexecutables
 from codespeed.views import getcomparisonexes
 from codespeed.views_data import get_sanitized_executable_name_for_timeline_view
@@ -56,10 +57,27 @@ class TestGetComparisonExes(TestCase):
         self.branch_custom = Branch.objects.create(name='custom',
                                                    project=self.project)
 
+        self.environment = Environment.objects.create(name='TestEnvironment')
+        self.benchmark = Benchmark.objects.create(name='TestBenchmark')
+
         self.revision_1_master = Revision.objects.create(
             branch=self.branch_master, commitid='1')
         self.revision_1_custom = Revision.objects.create(
             branch=self.branch_custom, commitid='1')
+
+        # getcomparisonexes() only offers executable/revision pairs that were
+        # actually benchmarked, so every revision a test expects to see needs
+        # results for the executables it expects alongside it.
+        self._add_results(self.revision_1_master)
+        self._add_results(self.revision_1_custom)
+
+    def _add_results(self, revision, *executables):
+        """Record a result for `revision`, for both executables by default."""
+        for executable in executables or (self.executable_1,
+                                          self.executable_2):
+            Result.objects.create(
+                value=1.0, revision=revision, executable=executable,
+                benchmark=self.benchmark, environment=self.environment)
 
     def _insert_mock_revision_objects(self):
         self.rev_v4 = Revision.objects.create(
@@ -68,6 +86,8 @@ class TestGetComparisonExes(TestCase):
             branch=self.branch_master, commitid='5', tag='v5.0.0')
         self.rev_v6 = Revision.objects.create(
             branch=self.branch_master, commitid='6', tag='v6.0.0')
+        for rev in (self.rev_v4, self.rev_v5, self.rev_v6):
+            self._add_results(rev)
 
     def test_get_comparisonexes_master_default_branch(self):
         # Standard "master" default branch is used
@@ -160,8 +180,9 @@ class TestGetComparisonExes(TestCase):
                                         display_on_comparison_page=False)
 
         Revision.objects.create(branch=branch1, commitid='1')
-        Revision.objects.create(branch=branch2, commitid='1')
+        rev_branch2 = Revision.objects.create(branch=branch2, commitid='1')
         Revision.objects.create(branch=branch3, commitid='1')
+        self._add_results(rev_branch2)
 
         executables, exe_keys = getcomparisonexes()
         self.assertEqual(len(executables), 1)
@@ -233,6 +254,55 @@ class TestGetComparisonExes(TestCase):
                 executables[self.project], self.rev_v5)
             self.assertExecutablesListDoesntContainRevision(
                 executables[self.project], self.rev_v6)
+
+    def test_get_comparisonexes_skips_unbenchmarked_pairs(self):
+        """An executable is only offered at revisions it was benchmarked at.
+
+        Nothing in the schema says which executables exist at which revision,
+        so without consulting Result every executable of a project is paired
+        with every revision of that project -- the state speed.pypy.org got
+        into when a second cpython executable was added, where half the
+        comparison entries selected nothing.
+        """
+        # A tagged release only executable_1 ran, and a branch only
+        # executable_2 ran on.
+        rev_tagged = Revision.objects.create(
+            branch=self.branch_master, commitid='7', tag='v7.0.0')
+        self._add_results(rev_tagged, self.executable_1)
+
+        branch_exe2 = Branch.objects.create(
+            name='exe2-only', project=self.project,
+            display_on_comparison_page=True)
+        rev_exe2 = Revision.objects.create(branch=branch_exe2, commitid='8')
+        self._add_results(rev_exe2, self.executable_2)
+
+        executables, exe_keys = getcomparisonexes()
+        entries = {(e['executable'].name, e['revision'].pk)
+                   for e in executables[self.project]}
+
+        # The tag is offered for executable_1 only...
+        self.assertIn(('TestExecutable1', rev_tagged.pk), entries)
+        self.assertNotIn(('TestExecutable2', rev_tagged.pk), entries)
+        # ...and the branch head for executable_2 only.
+        self.assertIn(('TestExecutable2', rev_exe2.pk), entries)
+        self.assertNotIn(('TestExecutable1', rev_exe2.pk), entries)
+
+        # Both executables still appear where both were benchmarked.
+        self.assertIn(('TestExecutable1', self.revision_1_master.pk), entries)
+        self.assertIn(('TestExecutable2', self.revision_1_master.pk), entries)
+
+        self.assertEqual(len(exe_keys), len(executables[self.project]))
+        self.assertEqual(sorted(exe_keys), sorted(
+            e['key'] for e in executables[self.project]))
+
+    def test_get_comparisonexes_revision_without_results_is_dropped(self):
+        """A revision nothing ran on contributes no entries at all."""
+        rev_empty = Revision.objects.create(
+            branch=self.branch_master, commitid='9', tag='v9.0.0')
+
+        executables, exe_keys = getcomparisonexes()
+        self.assertExecutablesListDoesntContainRevision(
+            executables[self.project], rev_empty)
 
     def assertExecutablesListContainsRevision(self, executables, revision):
         found = self._executable_list_contains_revision(executables=executables,
