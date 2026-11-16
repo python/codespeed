@@ -12,6 +12,9 @@ TOPDIR = os.path.split(BASEDIR)[1]
 #: The directory which should contain checked out source repositories:
 REPOSITORY_BASE_PATH = os.path.join(BASEDIR, "repos")
 
+#: Date revisions by commit date, not author date (cherry-picks sort right)
+GIT_USE_COMMIT_DATE = True
+
 ADMINS = (
     # ('Your Name', 'your_email@domain.com'),
 )
