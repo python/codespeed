@@ -109,7 +109,9 @@ def getlogs(endrev, startrev):
         except Exception:
             logger.debug('Failed to get tag', exc_info=True)
 
-        tag = stdout.strip() if p.returncode == 0 else ""
+        # --points-at lists every tag on the commit, one per line
+        tags = stdout.splitlines() if p.returncode == 0 else []
+        tag = tags[0].strip() if tags else ""
         date = datetime.datetime.utcfromtimestamp(
             int(date_t)).strftime("%Y-%m-%d %H:%M:%S")
 

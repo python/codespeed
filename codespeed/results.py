@@ -126,6 +126,12 @@ def save_result(data, update_repo=True):
                     rev.message = log['message']
                     rev.tag = log['tag']
 
+        # again, now that the commit log has filled in tag/author/message
+        try:
+            rev.full_clean()
+        except ValidationError as e:
+            return str(e), True
+
         rev.save()
 
     exe, created = Executable.objects.get_or_create(

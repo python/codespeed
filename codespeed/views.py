@@ -1001,7 +1001,7 @@ def changes(request):
         ).order_by('-date')[:revlimit])
     # Get lastest revisions for this project and it's "default" branch
     lastrevisions = revisionlists.get(defaultexecutable.project.name)
-    if not len(lastrevisions):
+    if not lastrevisions:
         return no_data_found(request)
     selectedrevision = lastrevisions[0]
 
