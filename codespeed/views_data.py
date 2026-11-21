@@ -45,12 +45,10 @@ def get_default_environment(enviros, data, multi=False):
     # Use permalink values
     if 'env' in data:
         for env_value in data['env'].split(","):
-            try:
-                env_id = int(env_value)
-            except ValueError:
-                continue
+            # Report links use the name, other permalinks the id
+            env_id = int(env_value) if env_value.isdecimal() else None
             for env in enviros:
-                if env_id == env.id:
+                if env.id == env_id or env.name == env_value:
                     defaultenviros.append(env)
                     break
             if not multi:
