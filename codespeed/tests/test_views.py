@@ -601,6 +601,21 @@ class TestReports(TestCase):
         self.assertIn('Latest Significant Results', content)
         self.assertIn(self.data['commitid'], content)
 
+    def test_report_link_selects_report_environment(self):
+        """The changes page opened from a report must show the report's
+        environment, not the default (first) one."""
+        quad = Environment.objects.create(name='Quad Core')
+        self.data['environment'] = quad.name
+        resp = self.client.post(reverse('add-result'), self.data)
+        self.assertEqual(resp.status_code, 202)
+        report = Report.objects.get(environment=quad)
+        Project.objects.filter(name='MyProject').update(default_branch='master')
+
+        response = self.client.get(report.get_absolute_url())
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['defaultenvironment'], [quad])
+
     def test_reports_post_returns_405(self):
         response = self.client.post(reverse('reports'), {})
 
