@@ -121,7 +121,7 @@ class Branch(models.Model):
 class Revision(models.Model):
     # git and mercurial's SHA-1 length is 40
     commitid = models.CharField(max_length=42)
-    tag = models.CharField(max_length=20, blank=True)
+    tag = models.CharField(max_length=64, blank=True)
     date = models.DateTimeField(null=True)
     message = models.TextField(blank=True)
     project = models.ForeignKey(
