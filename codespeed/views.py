@@ -23,7 +23,8 @@ from .views_data import (get_default_environment, split_environments,
                          getbaselineexecutables,
                          getdefaultexecutable, getcomparisonexes,
                          get_benchmark_results, get_num_revs_and_benchmarks,
-                         get_stats_with_defaults, parse_benchmark_ident)
+                         get_stats_with_defaults, parse_benchmark_ident,
+                         get_date_range, TIMELINE_MAX_RANGE_RESULTS)
 from .results import save_result, create_report_if_enough_data
 from . import commits
 from .validators import validate_results_request
@@ -543,6 +544,10 @@ def gettimelinedata(request):
         return HttpResponse(json.dumps(timeline_list))
 
     number_of_revs, benchmarks = get_num_revs_and_benchmarks(data)
+    date_range = get_date_range(data)
+    if date_range[0] and data['ben'] != 'grid':
+        # A start date asks for everything since then, not the last N
+        number_of_revs = TIMELINE_MAX_RANGE_RESULTS
 
     baseline_rev = None
     baseline_exe = None
@@ -557,13 +562,13 @@ def gettimelinedata(request):
 
     resp = StreamingHttpResponse(stream_timeline(baseline_exe, baseline_rev, benchmarks, data,
                                                  environments, executables, number_of_revs,
-                                                 next_benchmarks),
+                                                 next_benchmarks, date_range),
                                  content_type='application/json')
     return resp
 
 
 def stream_timeline(baseline_exe, baseline_rev, benchmarks, data, environments, executables,
-                    number_of_revs, next_benchmarks):
+                    number_of_revs, next_benchmarks, date_range=(None, None)):
     yield '{"timelines": ['
     num_results = {"results": 0}
     num_benchmark = 0
@@ -579,7 +584,8 @@ def stream_timeline(baseline_exe, baseline_rev, benchmarks, data, environments, 
 
         if not next_benchmarks or num_benchmark > next_benchmarks:
             result = get_timeline_for_benchmark(baseline_exe, baseline_rev, bench, environments,
-                                                executables, number_of_revs, num_results)
+                                                executables, number_of_revs, num_results,
+                                                date_range)
             if result != "":
                 transmitted_benchmarks += 1
                 yield result
@@ -602,7 +608,8 @@ def stream_timeline(baseline_exe, baseline_rev, benchmarks, data, environments, 
 
 
 def get_timeline_for_benchmark(baseline_exe, baseline_rev, bench, environments, executables,
-                               number_of_revs, num_results):
+                               number_of_revs, num_results, date_range=(None, None)):
+    start, end = date_range
     lessisbetter = bench.lessisbetter and ' (less is better)' or ' (more is better)'
     timeline = {
         'benchmark': bench.name,
@@ -614,6 +621,8 @@ def get_timeline_for_benchmark(baseline_exe, baseline_rev, bench, environments, 
         'branches': {},
         'baseline': "None",
         'environments': [{'id': env.id, 'name': env.name} for env in environments],
+        # Whether the date range holds more results than could be sent
+        'truncated': False,
     }
     append = False
     for branch in Branch.objects.filter(
@@ -630,7 +639,20 @@ def get_timeline_for_benchmark(baseline_exe, baseline_rev, bench, environments, 
                     revision__branch=branch,
                 ).select_related(
                     "revision"
-                ).order_by('-revision__date')[:number_of_revs]
+                )
+                if start:
+                    resultquery = resultquery.filter(revision__date__gte=start)
+                if end:
+                    resultquery = resultquery.filter(revision__date__lt=end)
+                resultquery = resultquery.order_by('-revision__date')
+                if start:
+                    # One more than needed tells whether the range was cut short
+                    resultquery = list(resultquery[:number_of_revs + 1])
+                    if len(resultquery) > number_of_revs:
+                        timeline['truncated'] = True
+                        del resultquery[number_of_revs:]
+                else:
+                    resultquery = resultquery[:number_of_revs]
                 if not len(resultquery):
                     continue
                 timeline['branches'].setdefault(branch.name, {})

@@ -101,6 +101,12 @@
       <option value="{{ rev }}">{{ rev }}</option>{% endfor %}
     </select> results
   </span>
+  <span class="options" title="Only show results of revisions between these dates. A start date shows every result since then instead of the last few.">
+    <label for="datefrom">From</label>
+    <input id="datefrom" type="date" />
+    <label for="dateto">to</label>
+    <input id="dateto" type="date" />
+  </span>
   <span class="options" title="Equal distance between results">
     <input id="equidistant" name="equidistant" type="checkbox" />
     <label for="equidistant">Equidistant</label>
@@ -115,6 +121,7 @@
     <label for="show_extrema_bands">Show extrema bands</label>
   </span>
   {% endif %}
+  <a id="resetzoom" href="#" hidden>Reset zoom</a>
   {% include "codespeed/permalink.html" %}
 </div>
 <div id="content" class="clearfix">

@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import copy
 import json
+from unittest import mock
 
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -465,6 +466,57 @@ class TestTimeline(TestCase):
         self.assertEqual(
             responsedata['timelines'][0]['branches']['master']['1:1'][1],
             ['2011/04/13 17:04:22 +0000', 2000.0, 1.11111, '2', '', 'master', ''])
+
+    def _master_points(self, **params):
+        data = {"exe": "1", "ben": "float", "env": "1", "revs": "2"}
+        data.update(params)
+        response = self.client.get(reverse('gettimelinedata'), data)
+        self.assertEqual(response.status_code, 200)
+        timelines = json.loads(response.getvalue().decode())['timelines']
+        if not timelines:
+            return []
+        return [point[0][:10].replace('/', '-')
+                for point in timelines[0]['branches']['master']['1:1']]
+
+    def test_gettimelinedata_date_range(self):
+        """'from' and 'to' are inclusive days; 'from' lifts the revs limit"""
+        every = self._master_points(revs="100")
+        self.assertGreaterEqual(len(every), 3)
+        self.assertEqual(every, sorted(every, reverse=True))
+        self.assertEqual(self._master_points(), every[:2])
+
+        first, last = every[-1], every[0]
+        # A start date returns everything since, whatever 'revs' says
+        self.assertEqual(self._master_points(**{"from": first}), every)
+        self.assertEqual(self._master_points(**{"from": last}),
+                         [day for day in every if day == last])
+        # An end date alone still gives the last 'revs' results before it
+        self.assertEqual(self._master_points(to=first, revs="100"),
+                         [day for day in every if day == first])
+        self.assertEqual(len(self._master_points(to=last)), 2)
+        self.assertEqual(self._master_points(**{"from": "2100-01-01"}), [])
+        # Malformed dates are ignored
+        self.assertEqual(self._master_points(**{"from": "nonsense", "to": ""}),
+                         every[:2])
+
+    def test_gettimelinedata_truncated_range(self):
+        """A range with more results than the limit keeps the latest ones"""
+        def get(**params):
+            data = {"exe": "1", "ben": "float", "env": "1", "revs": "2"}
+            data.update(params)
+            response = self.client.get(reverse('gettimelinedata'), data)
+            timeline = json.loads(response.getvalue().decode())['timelines'][0]
+            return timeline['truncated'], len(timeline['branches']['master']['1:1'])
+
+        total = get(revs="100")[1]
+        self.assertGreater(total, 2)
+        # Without a start date the "last N results" limit is not a truncation
+        self.assertEqual(get(), (False, 2))
+        self.assertEqual(get(**{"from": "2000-01-01"}), (False, total))
+        with mock.patch('codespeed.views.TIMELINE_MAX_RANGE_RESULTS', total):
+            self.assertEqual(get(**{"from": "2000-01-01"}), (False, total))
+        with mock.patch('codespeed.views.TIMELINE_MAX_RANGE_RESULTS', total - 1):
+            self.assertEqual(get(**{"from": "2000-01-01"}), (True, total - 1))
 
     def test_no_source_fold_with_one_source(self):
         """A single source shows a flat benchmark list and no fold header"""
