@@ -9,7 +9,15 @@ var baselineColor = "#d8b83f",
                     "#ff5800", "#958c12", "#4b5de4", "#0085cc"],
     defaults,
     plotInstance = null,
-    miniplotInstances = [];
+    miniplotInstances = [],
+    // Zoom of the main plot, mirrored in the URL as zx/zy so permalinks keep
+    // it: {x: [minMs, maxMs], y: [min, max]}, either key optional.
+    zoom = null,
+    // Reads the zoom off the main plot; runs shortly after its last redraw
+    zoomSync = null,
+    zoomSyncTimer = null,
+    // First and last day (YYYY-MM-DD) of the results on screen
+    dataRange = null;
 
 function setExeColors() {
     $("#executable > div.boxbody > ul > ul > li > input").each(function(index) {
@@ -45,6 +53,9 @@ function getConfiguration() {
     };
     var branch = readCheckbox("input[name='branch']:checked");
     if (branch) { config.bran = branch; }
+    var from = $("#datefrom").val(), to = $("#dateto").val();
+    if (from) { config.from = from; }
+    if (to) { config.to = to; }
     return config;
 }
 
@@ -61,16 +72,91 @@ function getUrlParams() {
     return params;
 }
 
+function parseRange(str) {
+    if (!str) { return null; }
+    var parts = str.split(',').map(Number);
+    return (parts.length === 2 && isFinite(parts[0]) && isFinite(parts[1]) &&
+            parts[0] < parts[1]) ? parts : null;
+}
+
+function parseZoom(params) {
+    var x = parseRange(params.zx), y = parseRange(params.zy);
+    if (!x && !y) { return null; }
+    var parsed = {};
+    if (x) {
+        parsed.x = x.map(function(v) { return v * 1000; });
+    }
+    if (y) {
+        parsed.y = y;
+    }
+    return parsed;
+}
+
+function cancelZoomSync() {
+    clearTimeout(zoomSyncTimer);
+    zoomSyncTimer = null;
+}
+
+// Run a pending sync now, for a caller that needs the zoom as it is on screen
+function flushZoomSync() {
+    if (zoomSyncTimer !== null) { 
+        zoomSync();
+    }
+}
+
+function clearZoom() {
+    cancelZoomSync();
+    zoom = null;
+    $("#resetzoom").prop("hidden", true);
+}
+
+// The query string for the selection plus the current zoom, which is not sent
+// to the server.
+function getQuery() {
+    var config = getConfiguration();
+    // A start date replaces the "last N results" limit
+    if (config.from) { delete config.revs; }
+    if (zoom && zoom.x) {
+        config.zx = zoom.x.map(function(v) { return Math.round(v / 1000); }).join(',');
+    }
+    if (zoom && zoom.y) {
+        config.zy = zoom.y.map(function(v) { return Number(v.toPrecision(4)); }).join(',');
+    }
+    return '?' + $.param(config).replace(/%2C/g, ',');
+}
+
 function updateUrl() {
-    history.replaceState(null, '', '?' + $.param(getConfiguration()));
+    history.replaceState(null, '', getQuery());
+}
+
+// Set the dates left open to the days of the results on screen, so that a
+// link to this view keeps showing them as newer ones arrive. The plot is left
+// alone: it already shows these results.
+function pinDates() {
+    if (!dataRange) { return; }
+    if (!$("#datefrom").val()) { $("#datefrom").val(dataRange.from); }
+    if (!$("#dateto").val()) { $("#dateto").val(dataRange.to); }
+    $("#revisions").attr("disabled", true);
+}
+
+function noteDataRange(sortedDateKeys) {
+    if (!sortedDateKeys.length) { return; }
+    var day = function(dk) { return dk.trim().slice(0, 10).replace(/\//g, '-'); };
+    var from = day(sortedDateKeys[0]), to = day(sortedDateKeys[sortedDateKeys.length - 1]);
+    dataRange = {
+        from: (dataRange && dataRange.from < from) ? dataRange.from : from,
+        to: (dataRange && dataRange.to > to) ? dataRange.to : to
+    };
 }
 
 function destroyPlots() {
+    cancelZoomSync();
     if (plotInstance) { plotInstance.destroy(); plotInstance = null; }
     $("#plot").off("mousemove.tooltip");
     $("#plot-legend").remove();
     miniplotInstances.forEach(function(g) { g.destroy(); });
     miniplotInstances = [];
+    dataRange = null;
 }
 
 // Build dygraphs-ready data from the branches dict.
@@ -192,6 +278,13 @@ function renderPlot(data) {
             '<p class="note"><i>' + data.benchmark + '</i>: ' + data.benchmark_description + '</p>');
     }
 
+    if (data.truncated) {
+        $("#plotdescription").append(
+            '<p class="note">This date range holds more results than can be shown ' +
+            'at once, so only the most recent ones are plotted. Set an earlier ' +
+            '"to" date to see the older ones.</p>');
+    }
+
     if (median) {
         $("span.options.median").css("display", "inline");
     }
@@ -216,6 +309,7 @@ function renderPlot(data) {
 
     var commitMap = built.commitMap;
     var sortedDateKeys = built.sortedDateKeys;
+    noteDataRange(sortedDateKeys);
     var seriesIds = built.seriesIds;
     var tsMap = built.tsMap;
     var dateIndex = built.dateIndex;
@@ -333,6 +427,37 @@ function renderPlot(data) {
 
     var lastHighlightPoints = null, lastHighlightX = null;
 
+    // The zoom is kept in timestamps so that a permalink still frames the
+    // same commits once newer results shift the equidistant indexes.
+    var tsList = sortedDateKeys.map(function(dk) { return dateIndex[dk].getTime(); });
+    var lastSeg = tsList.length - 2;
+    function xToTs(x) {
+        if (!equidistant) { return x; }
+        var i = Math.max(0, Math.min(lastSeg, Math.floor(x)));
+        return tsList[i] + (x - i) * (tsList[i + 1] - tsList[i]);
+    }
+    function tsToX(ts) {
+        if (!equidistant) { return ts; }
+        var i = 0;
+        while (i < lastSeg && tsList[i + 1] <= ts) { i++; }
+        var span = tsList[i + 1] - tsList[i];
+        return span ? i + (ts - tsList[i]) / span : i;
+    }
+    // A single point gets a padded window below, which is not a user zoom
+    var zoomable = built.data.length > 1;
+    if (!zoomable && zoom) { clearZoom(); updateUrl(); }
+    var initialZoom = zoom;
+    $("#resetzoom").prop("hidden", !initialZoom);
+    zoomSync = function() {
+        cancelZoomSync();
+        var g = plotInstance;
+        zoom = null;
+        if (g.isZoomed('x')) { zoom = {x: g.xAxisRange().map(xToTs)}; }
+        if (g.isZoomed('y')) { (zoom = zoom || {}).y = g.yAxisRange(0); }
+        $("#resetzoom").prop("hidden", !zoom);
+        updateUrl();
+    };
+
     // When there's a single data point, xMin===xMax and Dygraph clips the dot
     // at the canvas edge. Compute an explicit dateWindow with padding.
     var singlePointWindow = null;
@@ -365,11 +490,22 @@ function renderPlot(data) {
             ylabel: data.units + data.lessisbetter,
             axes: {
                 x: xAxisOpts,
-                y: { valueRange: [0, null] }
+                // includeZero rather than valueRange: [0, null], which
+                // Dygraphs would report as a permanent y zoom
+                y: { includeZero: true,
+                     valueRange: (initialZoom && initialZoom.y) || null }
             },
             xRangePad: 20,
-            dateWindow: singlePointWindow,
+            dateWindow: (initialZoom && initialZoom.x) ? initialZoom.x.map(tsToX)
+                                                       : singlePointWindow,
             connectSeparatedPoints: true,
+            // Fires on zoom, pan and reset alike; debounced as panning redraws
+            // on every mouse move.
+            drawCallback: function(g, isInitial) {
+                if (isInitial || !zoomable) { return; }
+                clearTimeout(zoomSyncTimer);
+                zoomSyncTimer = setTimeout(zoomSync, 200);
+            },
             underlayCallback: function(canvas, area, g) {
                 // Read the colour at draw time: a theme switch redraws the plot
                 var textColor = Theme.chartColors().text;
@@ -428,6 +564,12 @@ function renderPlot(data) {
         }
     );
 
+    if (initialZoom && initialZoom.y) {
+        // The plot now holds the range as its zoom; drop the option (without
+        // redrawing) so that resetting the zoom does not bring it back.
+        plotInstance.updateOptions({axes: {y: {valueRange: null}}}, true);
+    }
+
     // Persistent legend below the plot
     (function() {
         var $legend = $('<div id="plot-legend" style="margin:6px 0 4px 40px;font-size:0.9em;"></div>');
@@ -484,6 +626,7 @@ function renderMiniplot(plotid, data) {
     var median = data['data_type'] === 'M';
     var built = buildGraphData(data.branches, data.environments || [], median, false);
     if (built.data.length === 0) { return; }
+    noteDataRange(built.sortedDateKeys);
 
     if (data.baseline !== "None") {
         built.labels.push('Baseline');
@@ -526,7 +669,7 @@ function renderMiniplot(plotid, data) {
             legend: 'never',
             axes: {
                 x: { drawAxis: false, drawGrid: false },
-                y: { drawAxis: false, drawGrid: false, valueRange: [0, null] }
+                y: { drawAxis: false, drawGrid: false, includeZero: true }
             },
             xRangePad: 20,
             dateWindow: miniWindow,
@@ -538,7 +681,8 @@ function renderMiniplot(plotid, data) {
 }
 
 function render(data) {
-    $("#revisions").attr("disabled", false);
+    // A start date replaces the "last N results" limit
+    $("#revisions").attr("disabled", !!$("#datefrom").val());
     $("#equidistant").attr("disabled", false);
     $("span.options.median").css("display", "none");
 
@@ -576,6 +720,7 @@ function render(data) {
             $div.click(function() {
                 var benchid = $(this).attr("id").slice(5);
                 $("#benchmark_" + benchid).prop('checked', true);
+                clearZoom();
                 updateUrl();
                 refreshContent();
             });
@@ -603,6 +748,8 @@ function setValuesOfInputFields(params) {
 
     $("#revisions").val(valueOrDefault(params.revs, defaults.revisions));
     $("#baseline").val(valueOrDefault(params.base, defaults.baseline));
+    $("#datefrom").val(params.from || '');
+    $("#dateto").val(params.to || '');
 
     var executables = params.exe ? params.exe.split(',') : defaults.executables;
     var sel = $("input[name='executable']");
@@ -697,9 +844,12 @@ function initializeSite() {
     setValuesOfInputFields(params);
     initBenchmarkSearch();
 
-    var onChange = function() { updateUrl(); refreshContent(); };
+    zoom = parseZoom(params);
 
-    $("#revisions, #baseline").change(onChange);
+    // A zoom belongs to the plot it was made on: any new selection drops it
+    var onChange = function() { clearZoom(); updateUrl(); refreshContent(); };
+
+    $("#revisions, #baseline, #datefrom, #dateto").change(onChange);
     $("input[name='branch'], input[name='benchmark']," +
       "#equidistant, #show_quartile_bands, #show_extrema_bands"
     ).change(onChange);
@@ -714,12 +864,32 @@ function initializeSite() {
     });
     $('.checkall, .uncheckall').click(function() { updateExeColors(); onChange(); });
 
-    $("#permalink").click(function() {
-        window.location = "?" + $.param(getConfiguration());
+    $("#resetzoom").click(function(e) {
+        e.preventDefault();
+        clearZoom();
+        if (plotInstance) { plotInstance.resetZoom(); }
+        updateUrl();
+    });
+
+    $("#permalink").click(function(e) {
+        e.preventDefault();
+        flushZoomSync();
+        pinDates();
+        updateUrl();
+        var $link = $(this);
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(window.location.href).then(function() {
+                $link.addClass("copied");
+                setTimeout(function() { $link.removeClass("copied"); }, 1500);
+            }, function() {});
+        }
     });
 
     window.addEventListener('popstate', function() {
-        setValuesOfInputFields(getUrlParams());
+        var params = getUrlParams();
+        clearZoom();
+        zoom = parseZoom(params);
+        setValuesOfInputFields(params);
         refreshContent();
     });
 

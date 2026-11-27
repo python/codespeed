@@ -1,12 +1,14 @@
 from django.test import TestCase
 from django.test import override_settings
 
-from codespeed.models import Project, Executable, Branch, Revision, Benchmark
+from codespeed.models import (Project, Executable, Branch, Revision,
+                              Benchmark, Environment)
 from codespeed.views import getbaselineexecutables
 from codespeed.views import getcomparisonexes
 from codespeed.views_data import get_sanitized_executable_name_for_timeline_view
 from codespeed.views_data import get_sanitized_executable_name_for_comparison_view
 from codespeed.views_data import parse_benchmark_ident
+from codespeed.views_data import get_default_environment
 
 
 class TestGetBaselineExecutables(TestCase):
@@ -318,3 +320,36 @@ class TestParseBenchmarkIdent(TestCase):
         Benchmark.objects.create(name='float', source='pyperformance')
         self.assertEqual(
             parse_benchmark_ident('float'), ('float', 'legacy'))
+
+
+class TestGetDefaultEnvironment(TestCase):
+
+    def setUp(self):
+        self.old = Environment.objects.create(name='old', active=False)
+        self.new = Environment.objects.create(name='new')
+        self.newer = Environment.objects.create(name='newer')
+        self.enviros = Environment.objects.order_by('id')
+
+    def test_first_active_environment(self):
+        self.assertEqual(get_default_environment(self.enviros, {}),
+                         [self.new])
+
+    def test_multi_is_all_active_environments(self):
+        self.assertEqual(
+            get_default_environment(self.enviros, {}, multi=True),
+            [self.new, self.newer])
+
+    def test_historical_when_nothing_is_active(self):
+        Environment.objects.update(active=False)
+        self.assertEqual(get_default_environment(self.enviros, {}),
+                         [self.old])
+
+    def test_permalink_selects_historical(self):
+        data = {'env': str(self.old.id)}
+        self.assertEqual(get_default_environment(self.enviros, data),
+                         [self.old])
+
+    @override_settings(DEF_ENVIRONMENT='old')
+    def test_setting_selects_historical(self):
+        self.assertEqual(get_default_environment(self.enviros, {}),
+                         [self.old])

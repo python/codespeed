@@ -587,6 +587,10 @@ a#permalink, a#exportcsv {
 /* The download glyph's viewBox carries a margin, so both look the same size */
 a#permalink svg, a#exportcsv svg { width: 1.1em; height: 1.1em; }
 a#exportcsv + a#permalink { margin-left: 1em; }
+a#permalink.copied::after { content: "copied"; color: var(--text-muted); }
+a#resetzoom { margin-left: auto; font-size: 0.9em; }
+a#resetzoom:not([hidden]) + a#permalink { margin-left: 1em; }
+div#configbar input[type="date"] { margin: 0 0.3em; font: inherit; }
 
 /* Plot styles */
 div#plot { text-align: left; height: 500px; width: 100%; }

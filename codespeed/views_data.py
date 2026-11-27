@@ -1,3 +1,5 @@
+from datetime import date, datetime, time, timedelta, timezone
+
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
@@ -285,6 +287,31 @@ def get_num_revs_and_benchmarks(data):
             Benchmark, name=ben_name, source=ben_source)]
         number_of_revs = int(data.get('revs', 10))
     return number_of_revs, benchmarks
+
+
+# Results per series when a 'from' date lifts the "last N results" limit
+TIMELINE_MAX_RANGE_RESULTS = 400
+
+
+def get_date_range(data):
+    """Returns the (start, end) datetimes of the 'from' and 'to' dates
+    (YYYY-MM-DD, both inclusive) in the request. `end` is exclusive; a
+    missing or malformed date gives None for that bound.
+
+    Days are UTC days, as the timeline labels its points with UTC dates.
+    """
+    bounds = []
+    for key, offset in (('from', 0), ('to', 1)):
+        try:
+            day = date.fromisoformat(data.get(key, ''))
+            bound = datetime.combine(day + timedelta(days=offset), time.min)
+        except (ValueError, OverflowError):
+            bounds.append(None)
+            continue
+        if settings.USE_TZ:
+            bound = bound.replace(tzinfo=timezone.utc)
+        bounds.append(bound)
+    return tuple(bounds)
 
 
 def get_stats_with_defaults(res):
